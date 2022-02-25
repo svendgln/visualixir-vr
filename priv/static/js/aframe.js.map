@@ -1,0 +1,1 @@
+{"version":3,"sources":["aframe/aframeApp.js"],"names":[],"mappings":";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;AAAA;AAAA;AACA;AADA;AAAA","file":"../priv/static/js/aframe.js","sourcesContent":["console.log(\"loading aframe app\");\r\nwindow.alert('template vr scene')"]}

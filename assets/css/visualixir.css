@@ -1,0 +1,169 @@
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
+g.process circle {
+  stroke: black;
+}
+
+g.process.normal circle {
+  fill: steelblue;
+}
+
+g.process.supervisor circle {
+  fill: blue;
+}
+
+g.process.port circle {
+  fill: lightblue;
+}
+
+g.process.dead circle {
+  fill: lightgrey;
+}
+
+g.process.msg_traced circle {
+  stroke: red;
+}
+
+g.process text.application_label {
+  fill: green;
+}
+g.process text {
+  pointer-events: none;
+  font: 7px sans-serif;
+}
+
+#graph {
+  width: 100%;
+  height: 80%;
+  margin: none;
+  padding: none;
+}
+#graph line.link {
+  stroke: #ccc;
+}
+#graph path.msg {
+  stroke: red;
+  fill: none;
+  opacity: 1;
+}
+#graph g.nodebackground polygon.nodebackground {
+  opacity: 0.25;
+  stroke-opacity: 0.25;
+  fill: steelblue;
+  stroke: steelblue;
+  stroke-dasharray: 10 5;
+  stroke-linejoin: round;
+}
+#graph g.nodebackground text {
+  pointer-events: none;
+  fill: white;
+  font: 90px sans-serif;
+}
+#graph g#conversationgroup {
+  stroke: black;
+}
+#graph g#conversationgroup rect {
+  fill: grey;
+  opacity: 0.5;
+}
+#graph g#conversationgroup text {
+  stroke: none;
+}
+
+.full {
+  height: 100%;
+}
+
+#msg_seq {
+  width: 39%;
+  height: 100%;
+  border-left: 1px solid black;
+  display: inline-block;
+}
+#msg_seq g.actor text {
+  fill: white;
+  font-size: 6pt !important;
+}
+#msg_seq g.actor line {
+  stroke: black;
+  stroke-width: 1px;
+}
+#msg_seq g.message text {
+  font: 8pt monospace !important;
+}
+#msg_seq g.message line {
+  stroke: white;
+  stroke-width: 1.5px;
+}
+#msg_seq g.message path {
+  stroke: white;
+  stroke-width: 1.5px;
+}
+
+#log {
+  overflow-y: auto;
+  width: 100%;
+  height: 20%;
+  margin: none;
+  padding: 5px;
+  border-top: 1px solid black;
+}
+#log .logline {
+  font: 12px sans-serif;
+}
+#log .logline:nth-child(even) {
+  background: lightgrey;
+}
+#log .logline img {
+  height: 25px;
+}
+#log .logline .pid {
+  font-style: italic;
+}
+#log .logline .msg {
+  font-family: monospace;
+}
+
+#top_left {
+  position: absolute;
+}
+
+#legend svg {
+  width: 110px;
+  height: 100px;
+}
+#legend svg g.process text {
+  pointer-events: none;
+  font: 10px sans-serif;
+}
+
+#controls button {
+  font: 10px sans-serif;
+}
+
+#node_selector {
+  padding: 2px;
+  border: 1px solid black;
+  background: lightgrey;
+}
+#node_selector ul {
+  padding-left: 0;
+  text-align: center;
+  list-style-type: none;
+  margin: 0;
+}
+#node_selector ul li {
+  font: 12px sans-serif;
+}
+#node_selector ul li.selected {
+  background: steelblue;
+}
+#node_selector input {
+  font: 12px sans-serif;
+  width: 110px;
+}
+
+/*# sourceMappingURL=visualixir.css.map */
