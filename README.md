@@ -12,3 +12,4 @@ Run:
 
 Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
 
+Elixir 1.12.3 (Erlang 22)
