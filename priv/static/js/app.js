@@ -151,7 +151,8 @@ var __makeRelativeRequire = function(require, mappings, pref) {
 require.register("js/app.js", function(exports, require, module) {
 // We import the CSS which is extracted to its own file by esbuild.
 // Remove this line if you add a your own CSS build pipeline (e.g postcss).
-import "../css/app.css"
+// probs not needed..
+//import "../css/app.css"
 
 // If you want to use Phoenix channels, run `mix help phx.gen.channel`
 // to get started and then uncomment the line below.
@@ -1715,5 +1716,5 @@ d3.messageSequence = function() {
   return chart;
 }
 
-;require('js/app');
+;require('app');
 //# sourceMappingURL=app.js.map

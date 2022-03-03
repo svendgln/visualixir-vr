@@ -5,9 +5,15 @@ exports.config = {
         joinTo: {
           'js/app.js': [
             'js/*.js',
-            'vendor/*.js'
+            'vendor/*.js',
+           // 'node_modules/phoenix_html/priv/static/phoenix_html.js',
+           // 'node_modules/phoenix/priv/static/phoenix.cjs.js'
           ],
-          'js/aframe.js': 'aframe/*.js'
+          // 'js/aframe.js': [
+          //   'aframe/*.js',
+          //   'aframe/components/*.js'
+          // ]
+          'js/aframe.js': /^aframe/
         },
   
         // To use a separate vendor.js bundle, specify two files path
@@ -47,7 +53,7 @@ exports.config = {
     // Phoenix paths configuration
     paths: {
       // Dependencies and current project directories to watch
-      watched: ["images", "static", "css", "js", "vendor", "aframe"],
+      watched: ["images", "static", "css", "js", "vendor", "aframe", "components"],
   
       // Where to compile files to
       public: "../priv/static"
@@ -63,8 +69,9 @@ exports.config = {
   
     modules: {
       autoRequire: {
-        "js/app.js": ["js/app"],
-        "js/aframe.js": ["aframe/aframeApp"]
+        "js/app.js": ["app"],
+       // "js/aframe.js": ["aframe/*.js"]
+       "js/aframe.js": ["aframe/aframeApp.js"]//, "aframe/test.js"]
       }
     },
   
