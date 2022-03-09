@@ -24,6 +24,6 @@
 
   <body>
     <%= @inner_content %>
-    <script src="<%= Routes.static_path(@conn, "/js/app.js") %>"></script>
+
   </body>
 </html>

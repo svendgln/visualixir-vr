@@ -149,824 +149,845 @@ var __makeRelativeRequire = function(require, mappings, pref) {
   }
 };
 require.register("js/app.js", function(exports, require, module) {
+"use strict";
+
+require("../vendor/d3-msg-seq.js");
+
+require("phoenix_html");
+
+var _user_socket = _interopRequireDefault(require("./user_socket.js"));
+
+var _node_selector = _interopRequireDefault(require("./node_selector.js"));
+
+var _cluster_view = _interopRequireDefault(require("./cluster_view.js"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
 // We import the CSS which is extracted to its own file by esbuild.
 // Remove this line if you add a your own CSS build pipeline (e.g postcss).
 // probs not needed..
 //import "../css/app.css"
-
 // If you want to use Phoenix channels, run `mix help phx.gen.channel`
 // to get started and then uncomment the line below.
 // import "./user_socket.js"
-
 // You can include dependencies in two ways.
 //
 // The simplest option is to put them in assets/vendor and
 // import them using relative paths:
 //
-//     import "./vendor/some-package.js"
-//
-// Alternatively, you can `npm install some-package` and import
-// them using a path starting with the package name:
-//
-//     import "some-package"
-//
+console.log('BBBBBBBBBBBBBB');
 
-// Include phoenix_html to handle method=PUT/DELETE in forms and buttons.
-import "phoenix_html";
-import socket from "./user_socket.js";
-// import $ from 'jquery';
+var App = /*#__PURE__*/_createClass(function App(node_selector_container) {
+  var _this = this;
 
-import NodeSelector from "./node_selector.js";
-import ClusterView from "./cluster_view.js";
+  _classCallCheck(this, App);
 
-class App {
-    constructor(node_selector_container) {
-        this.node_selector = new NodeSelector(node_selector_container, this.channel);
-        this.cluster_view = new ClusterView($('#graph'), $('#log'));
-        $('#stop_msg_tracing').click(e => {
-            if (this.cluster_view) {
-                this.cluster_view.stopMsgTraceAll();
-            }
-        });
+  this.node_selector = new _node_selector["default"](node_selector_container, this.channel);
+  this.cluster_view = new _cluster_view["default"]($('#graph'), $('#log'));
+  $('#stop_msg_tracing').click(function (e) {
+    if (_this.cluster_view) {
+      _this.cluster_view.stopMsgTraceAll();
     }
-}
- 
-$( () => {
-    window.socket = socket;
-    //socket is connected in user_socket.js
+  });
+});
 
-    //test
-//     let ch1 = socket.channel('nodes:lobby')
-//     let ch2 = socket.channel('trace:lobby')
-//     ch1.join()
-//   .receive("ok", resp => { console.log("Joined successfully", resp) })
-//   .receive("error", resp => { console.log("Unable to join", resp) })
-//   ch2.join()
-//   .receive("ok", resp => { console.log("Joined successfully", resp) })
-//   .receive("error", resp => { console.log("Unable to join", resp) })
+$(function () {
+  window.socket = _user_socket["default"]; //socket is connected in user_socket.js
+  //test
+  //     let ch1 = socket.channel('nodes:lobby')
+  //     let ch2 = socket.channel('trace:lobby')
+  //     ch1.join()
+  //   .receive("ok", resp => { console.log("Joined successfully", resp) })
+  //   .receive("error", resp => { console.log("Unable to join", resp) })
+  //   ch2.join()
+  //   .receive("ok", resp => { console.log("Joined successfully", resp) })
+  //   .receive("error", resp => { console.log("Unable to join", resp) })
 
-    window.app = new App($('#node_selector'));
-    console.log('app loaded');
-})
-// Establish Phoenix Socket and LiveView configuration.
+  window.app = new App($('#node_selector'));
+  console.log('app loaded');
+}); // Establish Phoenix Socket and LiveView configuration.
 // import {Socket} from "phoenix"
 // import {LiveSocket} from "phoenix_live_view"
 // import topbar from "../vendor/topbar"
-
 // let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 // let liveSocket = new LiveSocket("/live", Socket, {params: {_csrf_token: csrfToken}})
-
 // Show progress bar on live navigation and form submits
 // topbar.config({barColors: {0: "#29d"}, shadowColor: "rgba(0, 0, 0, .3)"})
 // window.addEventListener("phx:page-loading-start", info => topbar.show())
 // window.addEventListener("phx:page-loading-stop", info => topbar.hide())
-
 // connect if there are any LiveViews on the page
 // liveSocket.connect()
-
 // expose liveSocket on window for web console debug logs and latency simulation:
 // >> liveSocket.enableDebug()
 // >> liveSocket.enableLatencySim(1000)  // enabled for duration of browser session
 // >> liveSocket.disableLatencySim()
 // window.liveSocket = liveSocket
-
 });
 
 ;require.register("js/cluster_view.js", function(exports, require, module) {
-import Graph from "./graph.js";
-import Log from "./log.js";
-import Process from "./process.js";
+"use strict";
 
-export default class {
-  constructor(graph_container, log_container) {
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports["default"] = void 0;
+
+var _graph = _interopRequireDefault(require("./graph.js"));
+
+var _log = _interopRequireDefault(require("./log.js"));
+
+var _process = _interopRequireDefault(require("./process.js"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
+
+var _default = /*#__PURE__*/function () {
+  function _default(graph_container, log_container) {
+    var _this = this;
+
+    _classCallCheck(this, _default);
+
     this.processes = {};
     this.grouping_processes = {};
-
     graph_container.empty();
     log_container.empty();
-
-    this.graph = new Graph(graph_container, this);
-    this.logger = new Log(log_container);
-
+    this.graph = new _graph["default"](graph_container, this);
+    this.logger = new _log["default"](log_container);
     this.channel = window.socket.channel("trace", {});
-
-    this.channel.join();
-
-    // the function indirection here maintains "this" in the callback
+    this.channel.join(); // the function indirection here maintains "this" in the callback
     // there's got to be a better way...
     // -> trace_channel.ex
-    this.channel.on("visualize_node", msg => this.visualizeNode(msg));
-    this.channel.on("cleanup_node", msg => this.cleanupNode(msg));
-    this.channel.on("spawn", msg => this.spawn(msg));
-    this.channel.on("exit", msg => this.exit(msg));
-    this.channel.on("name", msg => this.name(msg));
-    this.channel.on("links", msg => this.links(msg));
-    this.channel.on("unlink", msg => this.unlink(msg));
-    this.channel.on("msg", msg => this.msg(msg));
+
+    this.channel.on("visualize_node", function (msg) {
+      return _this.visualizeNode(msg);
+    });
+    this.channel.on("cleanup_node", function (msg) {
+      return _this.cleanupNode(msg);
+    });
+    this.channel.on("spawn", function (msg) {
+      return _this.spawn(msg);
+    });
+    this.channel.on("exit", function (msg) {
+      return _this.exit(msg);
+    });
+    this.channel.on("name", function (msg) {
+      return _this.name(msg);
+    });
+    this.channel.on("links", function (msg) {
+      return _this.links(msg);
+    });
+    this.channel.on("unlink", function (msg) {
+      return _this.unlink(msg);
+    });
+    this.channel.on("msg", function (msg) {
+      return _this.msg(msg);
+    });
   }
 
-  visualizeNode(msg) {
-    $.each(msg.pids, (pid, info) => this.addProcess(pid, info));
-    this.graph.update(true);
-  };
+  _createClass(_default, [{
+    key: "visualizeNode",
+    value: function visualizeNode(msg) {
+      var _this2 = this;
 
-  cleanupNode(msg) {
-    // could optimize this by building a nodes -> pids map upon visualization
-    $.each(this.processes, (pid, process) => {
-      if (process.node == msg.node) {
-        this.removeProcess(pid);
-      }
-    });
-    delete this.grouping_processes[msg.node];
-    this.graph.update(true);
-  }
-
-  spawn(msg) {
-    $.each(msg, (pid, info) => {
-      this.addProcess(pid, info);
-
-      this.logger.logOneProcessLine(this.processes[pid], "spawn");
-    });
-    this.graph.update(true);
-  };
-
-  // FIXME: need to evaluate invisible links for remaining processes
-  exit(msg) {
-    if (this.processes[msg.pid]) {
-      this.logger.logOneProcessLine(this.processes[msg.pid], "exit");
-      this.removeProcess(msg.pid);
+      $.each(msg.pids, function (pid, info) {
+        return _this2.addProcess(pid, info);
+      });
       this.graph.update(true);
     }
-  };
+  }, {
+    key: "cleanupNode",
+    value: function cleanupNode(msg) {
+      var _this3 = this;
 
-  name(msg) {
-    this.graph.updateName(msg.pid, msg.name);
-  };
-
-  links(msg) {
-    let from = this.processes[msg.from],
-        to = this.processes[msg.to];
-
-    if (from && to) {
-      this.addLink(from, to);
-      this.logger.logTwoProcessLine(from, to, "link");
-
-      if (!msg.from_was_unlinked)
-        this.removeInvisibleLink(from);
-
-      if (!msg.to_was_unlinked)
-        this.removeInvisibleLink(to);
-    }
-
-    this.graph.update(true);
-  };
-
-  unlink(msg) {
-    let from = this.processes[msg.from],
-        to = this.processes[msg.to];
-
-    if (from && to) {
-      this.graph.removeLink(from, to);
-      this.logger.logTwoProcessLine(from, to, "unlink");
-
-      if (!msg.from_any_links)
-        this.addInvisibleLink(from);
-
-      if (!msg.to_any_links)
-        this.addInvisibleLink(to);
-
-      this.graph.update(true);
-    }
-  };
-
-  msg(msg) {
-    let from = this.processes[msg.from_pid],
-        to = this.processes[msg.to_pid];
-
-    this.logger.logMsgLine(from, to, msg.msg);
-
-    // FIXME: should we really care if the processes exist to log the message?
-    if (from && to) {
-      this.logger.logMsgLine(from, to, msg.msg);
-      this.graph.addMsg(from, to, msg.msg);
-      this.graph.update(false);
-    }
-  };
-
-  addProcess(pid, info) {
-    if (this.processes[pid]) return; // exists
-
-    let process = this.processes[pid] = new Process(pid, info);
-
-    if (process.isGroupingProcess()) {
-      this.grouping_processes[process.node] = process;
-
-      // since this is the first time the grouping process has been seen, go through all processes and create invisble links
-      d3.values(this.processes).forEach(maybe_unlinked_process => {
-        if (!maybe_unlinked_process.isGroupingProcess()) {
-          this.addInvisibleLink(maybe_unlinked_process);
+      // could optimize this by building a nodes -> pids map upon visualization
+      $.each(this.processes, function (pid, process) {
+        if (process.node == msg.node) {
+          _this3.removeProcess(pid);
         }
       });
-    } else {
-      this.addInvisibleLink(process);
+      delete this.grouping_processes[msg.node];
+      this.graph.update(true);
     }
+  }, {
+    key: "spawn",
+    value: function spawn(msg) {
+      var _this4 = this;
 
-    info.links.forEach(other_pid => this.addLink(process, this.processes[other_pid]));
-  }
+      $.each(msg, function (pid, info) {
+        _this4.addProcess(pid, info);
 
-  addLink(from, to) {
-    if (from && to) {
-      from.links[to.id] = to;
-      to.links[from.id] = from;
-      this.graph.addLink(from, to);
+        _this4.logger.logOneProcessLine(_this4.processes[pid], "spawn");
+      });
+      this.graph.update(true);
     }
-  }
-
-  addInvisibleLink(process) {
-    let grouping_process = this.grouping_processes[process.node];
-    if (grouping_process) {
-      grouping_process.invisible_links[process.id] = process;
-      this.graph.addInvisibleLink(grouping_process, process);
+  }, {
+    key: "exit",
+    value: // FIXME: need to evaluate invisible links for remaining processes
+    function exit(msg) {
+      if (this.processes[msg.pid]) {
+        this.logger.logOneProcessLine(this.processes[msg.pid], "exit");
+        this.removeProcess(msg.pid);
+        this.graph.update(true);
+      }
     }
-  }
-
-  removeInvisibleLink(process) {
-    let grouping_process = this.grouping_processes[process.node];
-
-    if (grouping_process) {
-      delete grouping_process.invisible_links[process.id];
-      this.graph.removeInvisibleLink(grouping_process, process);
+  }, {
+    key: "name",
+    value: function name(msg) {
+      this.graph.updateName(msg.pid, msg.name);
     }
-  }
+  }, {
+    key: "links",
+    value: function links(msg) {
+      var from = this.processes[msg.from],
+          to = this.processes[msg.to];
 
-  removeProcess(pid) {
-    if(!this.processes[pid]) {
-      console.log("tried to remove unknown process " + pid);
-      return;
+      if (from && to) {
+        this.addLink(from, to);
+        this.logger.logTwoProcessLine(from, to, "link");
+        if (!msg.from_was_unlinked) this.removeInvisibleLink(from);
+        if (!msg.to_was_unlinked) this.removeInvisibleLink(to);
+      }
+
+      this.graph.update(true);
     }
+  }, {
+    key: "unlink",
+    value: function unlink(msg) {
+      var from = this.processes[msg.from],
+          to = this.processes[msg.to];
 
-    let process = this.processes[pid];
+      if (from && to) {
+        this.graph.removeLink(from, to);
+        this.logger.logTwoProcessLine(from, to, "unlink");
+        if (!msg.from_any_links) this.addInvisibleLink(from);
+        if (!msg.to_any_links) this.addInvisibleLink(to);
+        this.graph.update(true);
+      }
+    }
+  }, {
+    key: "msg",
+    value: function msg(_msg) {
+      var from = this.processes[_msg.from_pid],
+          to = this.processes[_msg.to_pid];
+      this.logger.logMsgLine(from, to, _msg.msg); // FIXME: should we really care if the processes exist to log the message?
 
-    $.each(process.links, (_idx, other_pid) => delete other_pid.links[pid]);
-    this.removeInvisibleLink(process);
+      if (from && to) {
+        this.logger.logMsgLine(from, to, _msg.msg);
+        this.graph.addMsg(from, to, _msg.msg);
+        this.graph.update(false);
+      }
+    }
+  }, {
+    key: "addProcess",
+    value: function addProcess(pid, info) {
+      var _this5 = this;
 
-    d3.values(process.links).forEach(linked_process => {
-      delete linked_process.links[pid];
+      if (this.processes[pid]) return; // exists
 
-      // when a process exits, its linked ports also exit
-      if(linked_process.id.match(/#Port<[\d\.]+>/))
-        delete this.processes[linked_process.id];
-    });
+      var process = this.processes[pid] = new _process["default"](pid, info);
 
-    this.graph.removeProcess(process);
+      if (process.isGroupingProcess()) {
+        this.grouping_processes[process.node] = process; // since this is the first time the grouping process has been seen, go through all processes and create invisble links
 
-    delete this.processes[pid];
-  }
+        d3.values(this.processes).forEach(function (maybe_unlinked_process) {
+          if (!maybe_unlinked_process.isGroupingProcess()) {
+            _this5.addInvisibleLink(maybe_unlinked_process);
+          }
+        });
+      } else {
+        this.addInvisibleLink(process);
+      }
 
-  msgTracePID(id) {
-    this.channel.push("msg_trace", id);
-  }
+      info.links.forEach(function (other_pid) {
+        return _this5.addLink(process, _this5.processes[other_pid]);
+      });
+    }
+  }, {
+    key: "addLink",
+    value: function addLink(from, to) {
+      if (from && to) {
+        from.links[to.id] = to;
+        to.links[from.id] = from;
+        this.graph.addLink(from, to);
+      }
+    }
+  }, {
+    key: "addInvisibleLink",
+    value: function addInvisibleLink(process) {
+      var grouping_process = this.grouping_processes[process.node];
 
-  stopMsgTraceAll(node) {
-    this.channel.push("stop_msg_trace_all", node);
-    this.graph.stopMsgTraceAll();
-    this.graph.update(false);
-  }
-}
+      if (grouping_process) {
+        grouping_process.invisible_links[process.id] = process;
+        this.graph.addInvisibleLink(grouping_process, process);
+      }
+    }
+  }, {
+    key: "removeInvisibleLink",
+    value: function removeInvisibleLink(process) {
+      var grouping_process = this.grouping_processes[process.node];
 
+      if (grouping_process) {
+        delete grouping_process.invisible_links[process.id];
+        this.graph.removeInvisibleLink(grouping_process, process);
+      }
+    }
+  }, {
+    key: "removeProcess",
+    value: function removeProcess(pid) {
+      var _this6 = this;
+
+      if (!this.processes[pid]) {
+        console.log("tried to remove unknown process " + pid);
+        return;
+      }
+
+      var process = this.processes[pid];
+      $.each(process.links, function (_idx, other_pid) {
+        return delete other_pid.links[pid];
+      });
+      this.removeInvisibleLink(process);
+      d3.values(process.links).forEach(function (linked_process) {
+        delete linked_process.links[pid]; // when a process exits, its linked ports also exit
+
+        if (linked_process.id.match(/#Port<[\d\.]+>/)) delete _this6.processes[linked_process.id];
+      });
+      this.graph.removeProcess(process);
+      delete this.processes[pid];
+    }
+  }, {
+    key: "msgTracePID",
+    value: function msgTracePID(id) {
+      this.channel.push("msg_trace", id);
+    }
+  }, {
+    key: "stopMsgTraceAll",
+    value: function stopMsgTraceAll(node) {
+      console.log('stop msg tracing');
+      this.channel.push("stop_msg_trace_all", node);
+      this.graph.stopMsgTraceAll();
+      this.graph.update(false);
+    }
+  }]);
+
+  return _default;
+}();
+
+exports["default"] = _default;
 });
 
 ;require.register("js/graph.js", function(exports, require, module) {
-import ClusterView from "./cluster_view.js";
-import MessageSequence from "./message_sequence.js";
+"use strict";
 
-const ALPHA_DECAY = 0.015,
-      PID_RADIUS = 5,
-      LABEL_OFFSET_X = 5,
-      LABEL_OFFSET_Y = 7,
-      INVISIBLE_LINK_STRENGTH = 0.01,
-      LINK_LENGTH = 80,
-      REPULSION = -LINK_LENGTH,
-      CENTERING_STRENGTH = 0.017,
-      ARROW_DX = 5,
-      ARROW_DY = 3;
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports["default"] = void 0;
+
+var _cluster_view = _interopRequireDefault(require("./cluster_view.js"));
+
+var _message_sequence = _interopRequireDefault(require("./message_sequence.js"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
+
+var ALPHA_DECAY = 0.015,
+    PID_RADIUS = 5,
+    LABEL_OFFSET_X = 5,
+    LABEL_OFFSET_Y = 7,
+    INVISIBLE_LINK_STRENGTH = 0.01,
+    LINK_LENGTH = 80,
+    REPULSION = -LINK_LENGTH,
+    CENTERING_STRENGTH = 0.017,
+    ARROW_DX = 5,
+    ARROW_DY = 3;
 
 function arrow(x, y, slope, direction) {
-  let d = direction ? 1 : -1,
+  var d = direction ? 1 : -1,
       xn = x - d * ARROW_DX / Math.sqrt(1 + Math.pow(slope, 2)),
       yn = y - d * slope * ARROW_DX / Math.sqrt(1 + Math.pow(slope, 2));
-
-  let pslope = -1 / slope, // perpendicular slope
-      dx = ARROW_DY / Math.sqrt(1 + Math.pow(pslope, 2)),
+  var pslope = -1 / slope,
+      // perpendicular slope
+  dx = ARROW_DY / Math.sqrt(1 + Math.pow(pslope, 2)),
       dy = pslope * ARROW_DY / Math.sqrt(1 + Math.pow(pslope, 2)),
       xa = xn - dx,
       ya = yn - dy,
       xa2 = xn + dx,
       ya2 = yn + dy;
-
-  return "M " + x  + " " + y +
-         "L " + xa + " " + ya +
-         "M " + x  + " " + y +
-         "L " + xa2 + " " + ya2;
+  return "M " + x + " " + y + "L " + xa + " " + ya + "M " + x + " " + y + "L " + xa2 + " " + ya2;
 }
 
+var _default = /*#__PURE__*/function () {
+  function _default(container, cluster_view) {
+    var _this = this;
 
-export default class {
-  constructor(container, cluster_view) {
+    _classCallCheck(this, _default);
+
     this.container = container;
     this.cluster_view = cluster_view;
-
-    let zoom =
-        d3.zoom()
-        .scaleExtent([0.1, 3])
-        .filter(() => !d3.event.altKey)
-        .on("zoom", () => {
-          this.set_transform(d3.event.transform.x, d3.event.transform.y, d3.event.transform.k);
-        });
-
-    let new_conversation,
+    var zoom = d3.zoom().scaleExtent([0.1, 3]).filter(function () {
+      return !d3.event.altKey;
+    }).on("zoom", function () {
+      _this.set_transform(d3.event.transform.x, d3.event.transform.y, d3.event.transform.k);
+    });
+    var new_conversation,
         new_conversation_group,
         new_conversation_seq,
         new_conversation_start = [0, 0];
+    var drag = d3.drag().on("start", function (d) {
+      new_conversation_group = _this.svg.select("#conversationgroup").append("g").attr("class", "conversation_group");
+      new_conversation = new_conversation_group.append("rect").attr("class", "selection");
+      new_conversation_seq = new_conversation_group.append("svg");
+      new_conversation_start = [d3.event.x, d3.event.y];
 
-    let drag =
-        d3.drag()
-        .on("start", d => {
-          new_conversation_group = this.svg.select("#conversationgroup").append("g").attr("class", "conversation_group");
-          new_conversation = new_conversation_group.append("rect").attr("class", "selection");
-          new_conversation_seq = new_conversation_group.append("svg");
+      var start = _this.transform_point(d3.event.x, d3.event.y);
 
-          new_conversation_start = [d3.event.x, d3.event.y];
+      new_conversation.attr("x", start.x);
+      new_conversation.attr("y", start.y);
+      new_conversation.attr("width", 0);
+      new_conversation.attr("height", 0);
+    }).on("drag", function (d) {
+      var start_x = new_conversation_start[0],
+          start_y = new_conversation_start[1];
+      var width = d3.event.x - start_x,
+          height = d3.event.y - start_y;
+      var transformed_width = width / _this.transform[2],
+          transformed_height = height / _this.transform[2];
 
-          let start = this.transform_point(d3.event.x, d3.event.y);
-          new_conversation.attr("x", start.x);
-          new_conversation.attr("y", start.y);
-          new_conversation.attr("width", 0);
-          new_conversation.attr("height", 0);
+      var new_conversation_seq_start = _this.transform_point(start_x + width, start_y + height);
 
-        })
-        .on("drag", d => {
-          let start_x = new_conversation_start[0],
-              start_y = new_conversation_start[1];
-          let width = (d3.event.x - start_x),
-              height = (d3.event.y - start_y);
+      new_conversation_seq.attr("x", new_conversation_seq_start.x);
+      new_conversation_seq.attr("y", new_conversation_seq_start.y);
 
-          let transformed_width = width / this.transform[2],
-              transformed_height = height / this.transform[2];
+      if (width >= 0) {
+        new_conversation.attr("width", transformed_width);
+        new_conversation_seq.attr("width", transformed_width * 3);
+      }
 
-          let new_conversation_seq_start = this.transform_point(start_x + width, start_y + height);
-          new_conversation_seq.attr("x", new_conversation_seq_start.x);
-          new_conversation_seq.attr("y", new_conversation_seq_start.y);
+      if (height >= 0) {
+        new_conversation.attr("height", transformed_height);
+        new_conversation_seq.attr("height", transformed_height * 3);
+      }
+    }).on("end", function (d) {
+      var msg_seq = new _message_sequence["default"](new_conversation_seq);
+      new_conversation_seq.node().message_sequence = msg_seq;
+    });
+    this.svg_element = d3.select(container.get(0)).append("svg").node();
+    this.svg = d3.select(this.svg_element).attr("width", "100%").attr("height", "100%").call(zoom).call(drag).append("g"); // x, y, k
 
-          if (width >= 0) {
-            new_conversation.attr("width", transformed_width);
-            new_conversation_seq.attr("width", transformed_width * 3);
-          }
-
-          if (height >= 0) {
-            new_conversation.attr("height", transformed_height);
-            new_conversation_seq.attr("height", transformed_height * 3);
-          }
-        })
-        .on("end", d => {
-          let msg_seq = new MessageSequence(new_conversation_seq);
-          new_conversation_seq.node().message_sequence = msg_seq;
-        });
-
-    this.svg_element =
-      d3.select(container.get(0))
-      .append("svg")
-      .node();
-
-    this.svg =
-      d3.select(this.svg_element)
-        .attr("width", "100%")
-        .attr("height", "100%")
-        .call(zoom)
-        .call(drag)
-        .append("g");
-
-    // x, y, k
     this.transform = null;
     this.set_transform(0, 0, 1);
-
-
     this.forceCenter = d3.forceCenter();
     this.forceLink = d3.forceLink().distance(LINK_LENGTH);
     this.forceInvisibleLink = d3.forceLink().strength(INVISIBLE_LINK_STRENGTH);
     this.forceManyBody = d3.forceManyBody().strength(REPULSION);
     this.forceCenter = d3.forceCenter(this.container.innerWidth() / 2, this.container.innerHeight() / 2);
-
-    this.forceSimulation =
-      d3.forceSimulation()
-      .force("link", this.forceLink)
-      .force("invisiblelink", this.forceInvisibleLink)
-      .force("charge", this.forceManyBody)
-      .force("center", this.forceCenter)
-      .force("x", d3.forceX().strength(CENTERING_STRENGTH))
-      .force("y", d3.forceY().strength(CENTERING_STRENGTH));
-
-    this.forceSimulation
-      .velocityDecay(0.2)
-      .alphaDecay(ALPHA_DECAY);
-
-    this.svg.append("g")
-      .attr("id", "nodebackgroundgroup");
-
-    this.svg.append("g")
-      .attr("id", "conversationgroup");
-
-    this.svg.append("g")
-      .attr("id", "msggroup");
-
-    this.svg.append("g")
-      .attr("id", "linkgroup");
-
-    this.svg.append("g")
-      .attr("id", "invisiblelinkgroup");
-
-    this.svg.append("g")
-      .attr("id", "processgroup");
-
+    this.forceSimulation = d3.forceSimulation().force("link", this.forceLink).force("invisiblelink", this.forceInvisibleLink).force("charge", this.forceManyBody).force("center", this.forceCenter).force("x", d3.forceX().strength(CENTERING_STRENGTH)).force("y", d3.forceY().strength(CENTERING_STRENGTH));
+    this.forceSimulation.velocityDecay(0.2).alphaDecay(ALPHA_DECAY);
+    this.svg.append("g").attr("id", "nodebackgroundgroup");
+    this.svg.append("g").attr("id", "conversationgroup");
+    this.svg.append("g").attr("id", "msggroup");
+    this.svg.append("g").attr("id", "linkgroup");
+    this.svg.append("g").attr("id", "invisiblelinkgroup");
+    this.svg.append("g").attr("id", "processgroup");
     this.links = {};
     this.invisible_links = {}; // used to group unlinked (free-floating) pids near the "net_kernel" pid
+
     this.msgs = {};
     this.conversations = {}; // process -> list of conversations
+
     this.message_sequences = {}; // conversation -> MessageSequence
   }
 
-  transform_point(x, y) {
-    let point = this.svg_element.createSVGPoint();
-    point.x = x;
-    point.y = y;
-
-    let transformed = point.matrixTransform(this.svg.node().getScreenCTM().inverse());
-    return {
-      x: transformed.x,
-      y: transformed.y
-    };
-  }
-
-  set_transform(x, y, k) {
-    let translation = [Math.round(x), Math.round(y)];
-    this.transform = translation.concat(k);
-
-    this.svg.attr("transform", "translate(" + translation + ") scale(" + k + ")");
-  }
-
-  add_process_to_conversation(process_id, conversation) {
-    this.conversations[process_id] = this.conversations[process_id] || [];
-    this.conversations[process_id].push(conversation);
-  }
-
-  conversations_at_point(x, y) {
-    let that = this;
-    return this.svg.selectAll("g.conversation_group > rect.selection")
-      .filter(function(d, i) {
-        let bounds = this.getBoundingClientRect(),
+  _createClass(_default, [{
+    key: "transform_point",
+    value: function transform_point(x, y) {
+      var point = this.svg_element.createSVGPoint();
+      point.x = x;
+      point.y = y;
+      var transformed = point.matrixTransform(this.svg.node().getScreenCTM().inverse());
+      return {
+        x: transformed.x,
+        y: transformed.y
+      };
+    }
+  }, {
+    key: "set_transform",
+    value: function set_transform(x, y, k) {
+      var translation = [Math.round(x), Math.round(y)];
+      this.transform = translation.concat(k);
+      this.svg.attr("transform", "translate(" + translation + ") scale(" + k + ")");
+    }
+  }, {
+    key: "add_process_to_conversation",
+    value: function add_process_to_conversation(process_id, conversation) {
+      this.conversations[process_id] = this.conversations[process_id] || [];
+      this.conversations[process_id].push(conversation);
+    }
+  }, {
+    key: "conversations_at_point",
+    value: function conversations_at_point(x, y) {
+      var that = this;
+      return this.svg.selectAll("g.conversation_group > rect.selection").filter(function (d, i) {
+        var bounds = this.getBoundingClientRect(),
             upper_left = that.transform_point(bounds.x, bounds.y),
             lower_right = that.transform_point(bounds.x + bounds.width, bounds.y + bounds.height);
-
-        let within_x = upper_left.x <= x && x <= lower_right.x,
+        var within_x = upper_left.x <= x && x <= lower_right.x,
             within_y = upper_left.y <= y && y <= lower_right.y;
-
         return within_x && within_y;
-      })
-      .select(function() {
+      }).select(function () {
         return d3.select(this.parentNode).select("svg").node();
       });
-  }
-
-
-  link_id(from, to) {
-    return [from.id, to.id].sort().join("-");
-  }
-
-  removeProcess(process) {
-    d3.values(process.links).forEach(linked_process => {
-      delete this.links[this.link_id(process, linked_process)];
-    });
-
-    let grouping_process = this.cluster_view.grouping_processes[process.node];
-    if (grouping_process) {
-      this.removeInvisibleLink(process, grouping_process);
     }
+  }, {
+    key: "link_id",
+    value: function link_id(from, to) {
+      return [from.id, to.id].sort().join("-");
+    }
+  }, {
+    key: "removeProcess",
+    value: function removeProcess(process) {
+      var _this2 = this;
 
-    if (process == grouping_process) {
-      d3.keys(process.invisible_links).forEach(other_process => {
-        this.removeInvisibleLink(process, other_process);
+      d3.values(process.links).forEach(function (linked_process) {
+        delete _this2.links[_this2.link_id(process, linked_process)];
       });
+      var grouping_process = this.cluster_view.grouping_processes[process.node];
+
+      if (grouping_process) {
+        this.removeInvisibleLink(process, grouping_process);
+      }
+
+      if (process == grouping_process) {
+        d3.keys(process.invisible_links).forEach(function (other_process) {
+          _this2.removeInvisibleLink(process, other_process);
+        });
+      }
     }
-  }
-
-  addLink(source, target) {
-    if(source && target) {
-      let link = {"source": source, "target": target},
-          id = this.link_id(source, target);
-
-      this.links[id] = link;
+  }, {
+    key: "addLink",
+    value: function addLink(source, target) {
+      if (source && target) {
+        var link = {
+          "source": source,
+          "target": target
+        },
+            id = this.link_id(source, target);
+        this.links[id] = link;
+      }
     }
-  }
-
-  addInvisibleLink(source, target) {
-    if(source && target) {
-      let link = {"source": source, "target": target},
-          id = this.link_id(source, target);
-
-      this.invisible_links[id] = link;
+  }, {
+    key: "addInvisibleLink",
+    value: function addInvisibleLink(source, target) {
+      if (source && target) {
+        var link = {
+          "source": source,
+          "target": target
+        },
+            id = this.link_id(source, target);
+        this.invisible_links[id] = link;
+      }
     }
-  }
-
-  removeInvisibleLink(source, target) {
-    if(source && target) {
-      let id = this.link_id(source, target);
-
-      delete this.invisible_links[id];
+  }, {
+    key: "removeInvisibleLink",
+    value: function removeInvisibleLink(source, target) {
+      if (source && target) {
+        var id = this.link_id(source, target);
+        delete this.invisible_links[id];
+      }
     }
-  }
-
-  removeLink(source, target) {
-    let id = this.link_id(source, target);
-
-    delete this.links[id];
-  }
-
-  addMsg(source, target, message) {
-    let id = source.id + "-" + target.id + "-" + Math.random(),
-        msg = {id: id, source: source, target: target, message: message};
-
-    let all_conversations = (this.conversations[source.id] || []).concat(this.conversations[target.id] || []);
-    let message_sequences = {};
-
-    all_conversations.forEach(function (c) {
-      let id = c.message_sequence.id;
-      message_sequences[id] = c.message_sequence;
-    });
-    Object.values(message_sequences).forEach(function (m) {
-      m.addMessage(msg);
-    });
-
-    this.msgs[id] = msg;
-  }
-
-  drawMessageElements(message_els) {
-    message_els.attr("d", d => {
-        let dx = d.target.x - d.source.x,
+  }, {
+    key: "removeLink",
+    value: function removeLink(source, target) {
+      var id = this.link_id(source, target);
+      delete this.links[id];
+    }
+  }, {
+    key: "addMsg",
+    value: function addMsg(source, target, message) {
+      var id = source.id + "-" + target.id + "-" + Math.random(),
+          msg = {
+        id: id,
+        source: source,
+        target: target,
+        message: message
+      };
+      var all_conversations = (this.conversations[source.id] || []).concat(this.conversations[target.id] || []);
+      var message_sequences = {};
+      all_conversations.forEach(function (c) {
+        var id = c.message_sequence.id;
+        message_sequences[id] = c.message_sequence;
+      });
+      Object.values(message_sequences).forEach(function (m) {
+        m.addMessage(msg);
+      });
+      this.msgs[id] = msg;
+    }
+  }, {
+    key: "drawMessageElements",
+    value: function drawMessageElements(message_els) {
+      message_els.attr("d", function (d) {
+        var dx = d.target.x - d.source.x,
             dy = d.target.y - d.source.y,
             dr = Math.sqrt(dx * dx + dy * dy);
-
-        return "M" + d.source.x + "," + d.source.y +
-               "A" + dr + "," + dr + " 0 0,1 " + d.target.x + "," + d.target.y;
-      })
-      .attr("d", function(d) {
-        let midway = this.getPointAtLength(this.getTotalLength() / 2);
-
-        let x = midway.x,
+        return "M" + d.source.x + "," + d.source.y + "A" + dr + "," + dr + " 0 0,1 " + d.target.x + "," + d.target.y;
+      }).attr("d", function (d) {
+        var midway = this.getPointAtLength(this.getTotalLength() / 2);
+        var x = midway.x,
             y = midway.y,
             dx = d.target.x - d.source.x,
             dy = d.target.y - d.source.y,
-            slope = dy/dx;
-
-        if (!isFinite(slope))
-          slope = Number.MAX_SAFE_INTEGER;
-
+            slope = dy / dx;
+        if (!isFinite(slope)) slope = Number.MAX_SAFE_INTEGER;
         return d3.select(this).attr("d") + arrow(midway.x, midway.y, slope, dx > 0);
       });
-  }
+    }
+  }, {
+    key: "updateName",
+    value: function updateName(pid, name) {
+      d3.select("[id='" + pid + "_label']").name(name);
+    }
+  }, {
+    key: "msgTraceProcess",
+    value: function msgTraceProcess(d, node) {
+      d.msg_traced = true;
+      this.cluster_view.msgTracePID(d.id);
+      d3.select(node).classed("msg_traced", true);
+    }
+  }, {
+    key: "stopMsgTraceAll",
+    value: function stopMsgTraceAll() {
+      d3.values(this.cluster_view.processes).forEach(function (pid) {
+        pid.msg_traced = false;
+      });
+    }
+  }, {
+    key: "update",
+    value: function update(restart_force) {
+      var _this3 = this;
 
-  updateName(pid, name) {
-    d3.select("[id='"+ pid +"_label']").name(name);
-  }
+      var pids_list = d3.values(this.cluster_view.processes),
+          links_list = d3.values(this.links),
+          invisible_links_list = d3.values(this.invisible_links),
+          self = this;
+      var pids_by_node = d3.nest().key(function (d) {
+        return d.node;
+      }).map(pids_list),
+          nodes_list = pids_by_node.keys();
+      var processes = this.svg.select("#processgroup").selectAll("g.process").data(pids_list, function (d) {
+        return d.id;
+      }),
+          node_bgs = this.svg.select("#nodebackgroundgroup").selectAll("g.nodebackground").data(nodes_list, function (d) {
+        return d;
+      }),
+          links = this.svg.select("#linkgroup").selectAll("line.link").data(links_list, function (d) {
+        return _this3.link_id(d.source, d.target);
+      }),
+          invisible_links = this.svg.select("#invisiblelinkgroup").selectAll("line.link").data(invisible_links_list, function (d) {
+        return _this3.link_id(d.source, d.target);
+      }),
+          msgs = this.svg.select("#msggroup").selectAll("path.msg").data(d3.values(this.msgs), function (d) {
+        return d.id;
+      });
+      this.forceSimulation.nodes(pids_list);
+      this.forceSimulation.force("link").links(links_list);
+      this.forceSimulation.force("invisiblelink").links(invisible_links_list); // Processes
 
-  msgTraceProcess(d, node) {
-    d.msg_traced = true;
-    this.cluster_view.msgTracePID(d.id);
-    d3.select(node).classed("msg_traced", true);
-  }
+      processes.exit().transition().duration(200).style("opacity", 0).remove().selectAll("circle").attr("class", "dead");
+      var drag = d3.drag().on("start", function (d) {
+        d3.event.sourceEvent.stopPropagation();
 
-  stopMsgTraceAll() {
-    d3.values(this.cluster_view.processes).forEach(pid => {
-      pid.msg_traced = false;
-    });
-  }
+        _this3.forceSimulation.restart();
 
-  update(restart_force) {
-    let pids_list = d3.values(this.cluster_view.processes),
-        links_list = d3.values(this.links),
-        invisible_links_list = d3.values(this.invisible_links),
-        self = this;
+        _this3.forceSimulation.alpha(1.0);
 
-    let pids_by_node = d3.nest().key(d => d.node).map(pids_list),
-        nodes_list = pids_by_node.keys();
+        d.fx = d.x;
+        d.fy = d.y;
+      }).on("drag", function (d) {
+        d.fx = d3.event.x;
+        d.fy = d3.event.y;
+      }).on("end", function (d) {
+        var conversations = self.conversations_at_point(d3.event.x, d3.event.y);
 
-    let processes = this.svg.select("#processgroup").selectAll("g.process").data(pids_list, d => d.id),
-        node_bgs = this.svg.select("#nodebackgroundgroup").selectAll("g.nodebackground").data(nodes_list, d => d),
-        links = this.svg.select("#linkgroup").selectAll("line.link").data(links_list, d => this.link_id(d.source, d.target)),
-        invisible_links = this.svg.select("#invisiblelinkgroup").selectAll("line.link").data(invisible_links_list, d => this.link_id(d.source, d.target)),
-        msgs = this.svg.select("#msggroup").selectAll("path.msg").data(d3.values(this.msgs), d => d.id);
+        if (conversations.size() > 0) {
+          self.msgTraceProcess(d, this);
+          var id = this.id;
+          conversations.nodes().forEach(function (c) {
+            self.add_process_to_conversation(id, c);
+          });
+        }
 
-    this.forceSimulation.nodes(pids_list);
-    this.forceSimulation.force("link").links(links_list);
-    this.forceSimulation.force("invisiblelink").links(invisible_links_list);
+        d.fixed = true;
+      });
+      var new_processes = processes.enter().append("g").attr("class", function (d) {
+        return "process " + d.type;
+      }).attr("id", function (d) {
+        return d.id;
+      }).call(drag);
+      processes = new_processes.merge(processes);
+      processes.classed("msg_traced", function (d) {
+        return d.msg_traced;
+      });
+      new_processes.on("click", function (d) {
+        if (d3.event.defaultPrevented) return;
 
-    // Processes
+        if (d3.event.altKey) {
+          self.msgTraceProcess(d, this);
+        }
+      }).on("dblclick", function (d) {
+        d3.event.stopPropagation();
+        d.fixed = false;
+        d.fx = null;
+        d.fy = null;
+      });
+      new_processes.append("circle").attr("r", PID_RADIUS);
+      new_processes.append("text").attr("id", function (n) {
+        return n.id + "_label";
+      }).attr("class", "pid_label").attr("dx", LABEL_OFFSET_X).attr("dy", LABEL_OFFSET_Y).text(function (n) {
+        return n.name;
+      });
+      new_processes.append("text").attr("id", function (n) {
+        return n.id + "_app_label";
+      }).attr("class", "application_label").attr("dx", LABEL_OFFSET_X).attr("dy", LABEL_OFFSET_Y * 2).text(function (n) {
+        return n.application;
+      }); // Links
 
-    processes.exit()
-      .transition()
-      .duration(200)
-      .style("opacity", 0)
-      .remove()
-      .selectAll("circle")
-      .attr("class", "dead");
+      links.exit().remove();
+      var new_links = links.enter().append("line").attr("class", "link");
+      links = new_links.merge(links);
+      invisible_links.exit().remove();
+      var new_invisible_links = invisible_links.enter().append("line").attr("class", "link");
+      invisible_links = new_invisible_links.merge(invisible_links); // Messages
 
-    let drag =
-        d3.drag()
-        .on("start", d => {
-          d3.event.sourceEvent.stopPropagation();
-          this.forceSimulation.restart();
-          this.forceSimulation.alpha(1.0);
-          d.fx = d.x;
-          d.fy = d.y;
-        })
-        .on("drag", d => {
-          d.fx = d3.event.x;
-          d.fy = d3.event.y;
-        })
-        .on("end", function(d) {
-          let conversations = self.conversations_at_point(d3.event.x, d3.event.y);
-          if (conversations.size() > 0) {
-            self.msgTraceProcess(d, this);
-            let id = this.id;
-            conversations.nodes().forEach(function (c) {
-              self.add_process_to_conversation(id, c);
-            });
-          }
-          d.fixed = true;
-        });
+      var new_msgs = msgs.enter().append("path").attr("class", "msg");
+      new_msgs.each(function (d) {
+        var pid_box = d3.select("[id='" + d.source.id + "']").select("circle").node().getBoundingClientRect();
+        var x = pid_box.x + pid_box.width / 2,
+            y = pid_box.y + pid_box.height / 2;
+      });
+      new_msgs.transition().on("end", function (d) {
+        return delete _this3.msgs[d.id];
+      }).duration(2000).style("opacity", 0).remove();
+      msgs = msgs.merge(new_msgs); // Node Backgrounds
 
-    let new_processes =
-        processes.enter().append("g")
-        .attr("class", d => "process " + d.type)
-        .attr("id", d => d.id)
-        .call(drag);
-
-    processes = new_processes.merge(processes);
-
-    processes.classed("msg_traced", d => d.msg_traced);
-
-    new_processes.on("click", function(d) {
-      if (d3.event.defaultPrevented)
-        return;
-
-      if (d3.event.altKey) {
-        self.msgTraceProcess(d, this);
-      }
-    })
-    .on("dblclick", d => {
-      d3.event.stopPropagation();
-      d.fixed = false;
-      d.fx = null;
-      d.fy = null;
-    });
-
-    new_processes.append("circle")
-      .attr("r", PID_RADIUS);
-
-    new_processes.append("text")
-      .attr("id", n => n.id + "_label")
-      .attr("class", "pid_label")
-      .attr("dx", LABEL_OFFSET_X)
-      .attr("dy", LABEL_OFFSET_Y)
-      .text(n => n.name);
-
-    new_processes.append("text")
-      .attr("id", n => n.id + "_app_label")
-      .attr("class", "application_label")
-      .attr("dx", LABEL_OFFSET_X)
-      .attr("dy", LABEL_OFFSET_Y * 2)
-      .text(n => n.application);
-
-    // Links
-
-    links.exit().remove();
-    var new_links =
-        links.enter().append("line")
-        .attr("class", "link");
-
-    links = new_links.merge(links);
-
-
-    invisible_links.exit().remove();
-    var new_invisible_links =
-        invisible_links.enter().append("line")
-        .attr("class", "link");
-
-    invisible_links = new_invisible_links.merge(invisible_links);
-
-    // Messages
-
-    let new_msgs = msgs.enter().append("path").attr("class", "msg");
-
-    new_msgs.each(d => {
-      let pid_box =
-        d3.select("[id='"+ d.source.id +"']")
-          .select("circle")
-          .node()
-          .getBoundingClientRect();
-
-      let x = pid_box.x + pid_box.width/2,
-          y = pid_box.y + pid_box.height/2;
-
-    });
-
-    new_msgs.transition()
-      .on("end", d => delete this.msgs[d.id])
-      .duration(2000)
-      .style("opacity", 0)
-      .remove();
-
-    msgs = msgs.merge(new_msgs);
-
-    // Node Backgrounds
-
-    node_bgs.exit()
-      // .transition()
+      node_bgs.exit() // .transition()
       // .duration(2000)
       // .style("opacity", 0)
       .remove();
-
-    let new_node_bgs =
-        node_bgs.enter()
-        .append("g")
-        .attr("class", "nodebackground")
-        .attr("node", d => d);
-
-    new_node_bgs
-        .append("polygon")
-        .attr("class", "nodebackground")
-        .attr("stroke-width", PID_RADIUS * 8);
-
-    new_node_bgs
-      .append("text")
-      .text(d => d.replace(/@.*/, ''));
-
-    node_bgs = node_bgs.merge(new_node_bgs);
-
-
-    // if the force layout has stopped moving, so the tick function wont be called, we'll statically draw the message curves.
-    if (this.forceSimulation.alpha() < ALPHA_DECAY)
-      this.drawMessageElements(msgs);
-
-    this.forceSimulation.on("tick", () => {
-      links
-        .attr("x1", d => Math.round(d.source.x))
-        .attr("y1", d => Math.round(d.source.y))
-        .attr("x2", d => Math.round(d.target.x))
-        .attr("y2", d => Math.round(d.target.y));
-
-      this.drawMessageElements(msgs);
-
-      processes.attr("transform", d => "translate(" + Math.round(d.x) + "," + Math.round(d.y) + ")");
-
-      pids_by_node.each((pids, node) => {
-        let points = pids.map(p => [p.x, p.y]),
-            hull = d3.polygonHull(points);
-
-        if (hull) {
-          hull = hull.map(p => [Math.round(p[0]), Math.round(p[1])]);
-
-          let hull_points_str = hull.map(point => point.join(" ")).join(", ");
-
-          let node_bg = node_bgs.filter("[node='" + node + "']");
-
-          node_bg
-            .select("polygon")
-            .attr("points", hull_points_str);
-
-          let centroid = d3.polygonCentroid(hull);
-
-          node_bg
-            .select("text")
-            .attr("transform", function(d) {
-              let bounding_box = this.getBBox();
-              return "translate(" + (centroid[0] - bounding_box.width/2) + "," + (centroid[1] - bounding_box.height/2) + ")";
-            });
-        }
+      var new_node_bgs = node_bgs.enter().append("g").attr("class", "nodebackground").attr("node", function (d) {
+        return d;
       });
-    });
+      new_node_bgs.append("polygon").attr("class", "nodebackground").attr("stroke-width", PID_RADIUS * 8);
+      new_node_bgs.append("text").text(function (d) {
+        return d.replace(/@.*/, '');
+      });
+      node_bgs = node_bgs.merge(new_node_bgs); // if the force layout has stopped moving, so the tick function wont be called, we'll statically draw the message curves.
 
-    if (restart_force)
-      this.forceSimulation.alpha(1).restart();
-  }
-}
+      if (this.forceSimulation.alpha() < ALPHA_DECAY) this.drawMessageElements(msgs);
+      this.forceSimulation.on("tick", function () {
+        links.attr("x1", function (d) {
+          return Math.round(d.source.x);
+        }).attr("y1", function (d) {
+          return Math.round(d.source.y);
+        }).attr("x2", function (d) {
+          return Math.round(d.target.x);
+        }).attr("y2", function (d) {
+          return Math.round(d.target.y);
+        });
 
+        _this3.drawMessageElements(msgs);
+
+        processes.attr("transform", function (d) {
+          return "translate(" + Math.round(d.x) + "," + Math.round(d.y) + ")";
+        });
+        pids_by_node.each(function (pids, node) {
+          var points = pids.map(function (p) {
+            return [p.x, p.y];
+          }),
+              hull = d3.polygonHull(points);
+
+          if (hull) {
+            hull = hull.map(function (p) {
+              return [Math.round(p[0]), Math.round(p[1])];
+            });
+            var hull_points_str = hull.map(function (point) {
+              return point.join(" ");
+            }).join(", ");
+            var node_bg = node_bgs.filter("[node='" + node + "']");
+            node_bg.select("polygon").attr("points", hull_points_str);
+            var centroid = d3.polygonCentroid(hull);
+            node_bg.select("text").attr("transform", function (d) {
+              var bounding_box = this.getBBox();
+              return "translate(" + (centroid[0] - bounding_box.width / 2) + "," + (centroid[1] - bounding_box.height / 2) + ")";
+            });
+          }
+        });
+      });
+      if (restart_force) this.forceSimulation.alpha(1).restart();
+    }
+  }]);
+
+  return _default;
+}();
+
+exports["default"] = _default;
 });
 
 ;require.register("js/log.js", function(exports, require, module) {
-const MAX_LOG_LINES = 100;
+"use strict";
 
-class OneProcess {
-  constructor(process, type) {
+function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports["default"] = void 0;
+
+function _get() { if (typeof Reflect !== "undefined" && Reflect.get) { _get = Reflect.get; } else { _get = function _get(target, property, receiver) { var base = _superPropBase(target, property); if (!base) return; var desc = Object.getOwnPropertyDescriptor(base, property); if (desc.get) { return desc.get.call(arguments.length < 3 ? target : receiver); } return desc.value; }; } return _get.apply(this, arguments); }
+
+function _superPropBase(object, property) { while (!Object.prototype.hasOwnProperty.call(object, property)) { object = _getPrototypeOf(object); if (object === null) break; } return object; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); Object.defineProperty(subClass, "prototype", { writable: false }); if (superClass) _setPrototypeOf(subClass, superClass); }
+
+function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
+function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function _createSuperInternal() { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
+
+function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } else if (call !== void 0) { throw new TypeError("Derived constructors may only return object or undefined"); } return _assertThisInitialized(self); }
+
+function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
+
+function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); return true; } catch (e) { return false; } }
+
+function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
+
+var MAX_LOG_LINES = 100;
+
+var OneProcess = /*#__PURE__*/function () {
+  function OneProcess(process, type) {
+    _classCallCheck(this, OneProcess);
+
     this.process = process;
     this.type = type;
 
@@ -974,223 +995,310 @@ class OneProcess {
       case "spawn":
         this.verb = "spawned";
         break;
+
       case "exit":
         this.verb = "exited";
         break;
     }
   }
 
-  toHTML() {
-    return '<span class="pid"> ' + this.process.name + " </span>" +
-           '<span class="verb">' + this.verb + "</span> on " +
-           '<span class="pid"> ' + this.process.node + " </span> ";
-  }
-}
+  _createClass(OneProcess, [{
+    key: "toHTML",
+    value: function toHTML() {
+      return '<span class="pid"> ' + this.process.name + " </span>" + '<span class="verb">' + this.verb + "</span> on " + '<span class="pid"> ' + this.process.node + " </span> ";
+    }
+  }]);
 
-class TwoProcess {
-  constructor(from_process, to_process, type) {
+  return OneProcess;
+}();
+
+var TwoProcess = /*#__PURE__*/function () {
+  function TwoProcess(from_process, to_process, type) {
+    _classCallCheck(this, TwoProcess);
+
     this.from_process = from_process;
     this.to_process = to_process;
     this.type = type;
 
     switch (type) {
-     case "link":
-       this.verb = "linked with";
-       break;
-     case "unlink":
-       this.verb = "unlinked from";
-       break;
-     }
-  }
+      case "link":
+        this.verb = "linked with";
+        break;
 
-  toHTML() {
-    let lines;
-
-    if (this.from_process.node == this.to_process.node) {
-      lines = ['<span class="pid from">' + this.from_process.name + "</span> "];
-    } else {
-      lines = ['<span class="pid from">' + this.from_process.name + "</span> on ",
-               '<span class="pid from">' + this.from_process.node + "</span> "];
+      case "unlink":
+        this.verb = "unlinked from";
+        break;
     }
-
-    return lines.concat([
-      '<span class="verb">' + this.verb + "</span> ",
-      '<span class="pid to">' + this.to_process.name + "</span> on ",
-      '<span class="pid to">' + this.to_process.node + "</span> "
-    ]).join("");
-  }
-}
-
-class Msg extends TwoProcess {
-  constructor(from_process, to_process, msg) {
-    super(from_process, to_process);
-
-    this.msg = msg;
-    this.verb = "sent";
-    this.type = "msg";
   }
 
-  toHTML() {
-    return super.toHTML() +
-           '<span class="verb"> the message </span>' +
-           '<span class="msg"> ' + this.msg + " </span> ";
+  _createClass(TwoProcess, [{
+    key: "toHTML",
+    value: function toHTML() {
+      var lines;
+
+      if (this.from_process.node == this.to_process.node) {
+        lines = ['<span class="pid from">' + this.from_process.name + "</span> "];
+      } else {
+        lines = ['<span class="pid from">' + this.from_process.name + "</span> on ", '<span class="pid from">' + this.from_process.node + "</span> "];
+      }
+
+      return lines.concat(['<span class="verb">' + this.verb + "</span> ", '<span class="pid to">' + this.to_process.name + "</span> on ", '<span class="pid to">' + this.to_process.node + "</span> "]).join("");
+    }
+  }]);
+
+  return TwoProcess;
+}();
+
+var Msg = /*#__PURE__*/function (_TwoProcess) {
+  _inherits(Msg, _TwoProcess);
+
+  var _super = _createSuper(Msg);
+
+  function Msg(from_process, to_process, msg) {
+    var _this;
+
+    _classCallCheck(this, Msg);
+
+    _this = _super.call(this, from_process, to_process);
+    _this.msg = msg;
+    _this.verb = "sent";
+    _this.type = "msg";
+    return _this;
   }
-}
 
+  _createClass(Msg, [{
+    key: "toHTML",
+    value: function toHTML() {
+      return _get(_getPrototypeOf(Msg.prototype), "toHTML", this).call(this) + '<span class="verb"> the message </span>' + '<span class="msg"> ' + this.msg + " </span> ";
+    }
+  }]);
 
-export default class {
-  constructor(container) {
+  return Msg;
+}(TwoProcess);
+
+var _default = /*#__PURE__*/function () {
+  function _default(container) {
+    _classCallCheck(this, _default);
+
     this.container = d3.select(container.get(0));
     this.lines = [];
   }
 
-  logMsgLine(from_process, to_process, msg) { this.addLine(new Msg(from_process, to_process, msg)); }
-  logOneProcessLine(process, type) { this.addLine(new OneProcess(process, type)); }
-  logTwoProcessLine(process, other_process, type) { this.addLine(new TwoProcess(process, other_process, type)); }
+  _createClass(_default, [{
+    key: "logMsgLine",
+    value: function logMsgLine(from_process, to_process, msg) {
+      this.addLine(new Msg(from_process, to_process, msg));
+    }
+  }, {
+    key: "logOneProcessLine",
+    value: function logOneProcessLine(process, type) {
+      this.addLine(new OneProcess(process, type));
+    }
+  }, {
+    key: "logTwoProcessLine",
+    value: function logTwoProcessLine(process, other_process, type) {
+      this.addLine(new TwoProcess(process, other_process, type));
+    }
+  }, {
+    key: "addLine",
+    value: function addLine(line) {
+      line.id = new Date().getTime() + "" + Math.random() + "" + Math.random();
+      this.lines.unshift(line);
+      this.lines = this.lines.splice(0, MAX_LOG_LINES + 1);
+      this.update();
+    }
+  }, {
+    key: "update",
+    value: function update() {
+      var line_els = this.container.selectAll("div.logline").data(this.lines, function (d) {
+        return d.id;
+      });
+      line_els.exit().remove();
+      var line = line_els.enter().insert("div", ":first-child").attr("class", function (l) {
+        return "logline " + l.type;
+      }).html(function (l) {
+        return '<img src="/images/' + l.type + '.png">' + l.toHTML();
+      });
+      line_els.merge(line);
+    }
+  }]);
 
-  addLine(line) {
-    line.id = new Date().getTime() + "" + Math.random() + "" + Math.random();
-    this.lines.unshift(line);
-    this.lines = this.lines.splice(0, MAX_LOG_LINES+1);
-    this.update();
-  }
+  return _default;
+}();
 
-  update() {
-    let line_els = this.container.selectAll("div.logline").data(this.lines, d => d.id);
-
-    line_els.exit().remove();
-
-    let line =
-        line_els.enter()
-        .insert("div", ":first-child")
-        .attr("class", l => "logline " + l.type)
-        .html(l => '<img src="/images/' + l.type + '.png">' + l.toHTML());
-
-    line_els.merge(line);
-  }
-}
-
+exports["default"] = _default;
 });
 
 ;require.register("js/message_sequence.js", function(exports, require, module) {
-const FADE_TIME = 2000, // msec
-      MAX_MSG_LENGTH = 60,
-      MAX_PID_LENGTH = 30;
+"use strict";
 
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports["default"] = void 0;
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
+
+var FADE_TIME = 2000,
+    // msec
+MAX_MSG_LENGTH = 60,
+    MAX_PID_LENGTH = 30;
 var nextMessageSequenceID = 1;
 
-export default class {
-  constructor(svg) {
+var _default = /*#__PURE__*/function () {
+  function _default(svg) {
+    _classCallCheck(this, _default);
+
     this.id = nextMessageSequenceID++;
     this.svg = svg;
     this.msg_seq = d3.messageSequence().fade(FADE_TIME);
     window.msg_seq = this.msg_seq;
-
     this.svg.node().msg_seq = this;
-
-    this.svg
-      .append("rect")
-      .attr("class", "background")
-      .attr("width", "100%")
-      .attr("height", "100%");
-
+    this.svg.append("rect").attr("class", "background").attr("width", "100%").attr("height", "100%");
     this.svg.call(this.msg_seq);
   }
 
-  addMessage(msg) {
-    let text = msg.message,
-        from = msg.source.qualifiedName(),
-        to = msg.target.qualifiedName();
+  _createClass(_default, [{
+    key: "addMessage",
+    value: function addMessage(msg) {
+      var text = msg.message,
+          from = msg.source.qualifiedName(),
+          to = msg.target.qualifiedName();
+      if (text.length > MAX_MSG_LENGTH) text = text.slice(0, MAX_MSG_LENGTH - 1) + " ...";
+      if (from.length > MAX_PID_LENGTH) from = from.slice(0, MAX_PID_LENGTH - 1) + " ...";
+      if (to.length > MAX_PID_LENGTH) to = to.slice(0, MAX_PID_LENGTH - 1) + " ...";
+      this.msg_seq.addMessage({
+        from: from,
+        to: to,
+        msg: text
+      });
+    }
+  }]);
 
-    if (text.length > MAX_MSG_LENGTH)
-      text = text.slice(0, MAX_MSG_LENGTH-1) + " ...";
+  return _default;
+}();
 
-    if (from.length > MAX_PID_LENGTH)
-      from = from.slice(0, MAX_PID_LENGTH-1) + " ...";
-
-    if (to.length > MAX_PID_LENGTH)
-      to = to.slice(0, MAX_PID_LENGTH-1) + " ...";
-
-    this.msg_seq.addMessage({from: from, to: to, msg: text});
-  }
-}
-
+exports["default"] = _default;
 });
 
 ;require.register("js/node_selector.js", function(exports, require, module) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports["default"] = void 0;
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
+
 /*
 Node Selector: container = top left table
 */
+var _default = /*#__PURE__*/function () {
+  function _default(container) {
+    var _this = this;
 
-export default class {
-  constructor(container) {
+    _classCallCheck(this, _default);
+
     this.container = container;
     this.channel = window.socket.channel("nodes", {});
 
-    let updateNodes = msg => {
-      this.update(msg.nodes);
+    var updateNodes = function updateNodes(msg) {
+      _this.update(msg.nodes);
     };
 
-    this.channel.join().receive("ok", updateNodes);
-    // update msg callback
-    this.channel.on("update", updateNodes);
+    this.channel.join().receive("ok", updateNodes); // update msg callback
 
-    let self = this; // node selector instance
+    this.channel.on("update", updateNodes);
+    var self = this; // node selector instance
+
     $(this.container).find("input").keypress(function (event) {
-      if (event.keyCode === 13) { // enter key
+      if (event.keyCode === 13) {
+        // enter key
         self.add(this.value.trim());
         this.value = ""; // clear input
       }
     });
   }
 
-  update(nodes) {
-    let self = this;
-    // update node table
-    let node_els = d3.select(this.container.find("ul").get(0)).selectAll("li.node_name").data(nodes);
+  _createClass(_default, [{
+    key: "update",
+    value: function update(nodes) {
+      var self = this; // update node table
 
-    node_els.exit().remove(); //IDK LOOK UP delete??
+      var node_els = d3.select(this.container.find("ul").get(0)).selectAll("li.node_name").data(nodes);
+      console.log('updating nodes: ', nodes);
+      node_els.exit().remove(); //IDK LOOK UP delete??
 
-    let node =
-        node_els.enter()
-        .insert("li")
-        .attr("class", "node_name")
-        .html(n => n)
-        .on("click", function(d) {
-          if ($(this).hasClass("selected")) {
-            $(this).removeClass("selected");
-            self.cleanupNode(d);
-          } else {
-            $(this).addClass("selected");
-            self.visualizeNode(d);
-          }
-        });
+      var node = node_els.enter().insert("li").attr("class", "node_name").html(function (n) {
+        return n;
+      }).on("click", function (d) {
+        if ($(this).hasClass("selected")) {
+          $(this).removeClass("selected");
+          self.cleanupNode(d);
+        } else {
+          $(this).addClass("selected");
+          self.visualizeNode(d);
+        }
+      });
+      node_els.merge(node);
+    } // when adding new node from input
 
-    node_els.merge(node);
-  }
-  // when adding new node from input
-  add(node) {
-    // websocket add msg
-    this.channel.push("add", node);
-  }
-  // when selecting node from table
-  visualizeNode(node) {
-    this.channel.push("visualize", node);
-  }
-  // when deselecting node from table
-  cleanupNode(node) {
-    this.channel.push("cleanup", node);
-  }
-}
+  }, {
+    key: "add",
+    value: function add(node) {
+      // websocket add msg
+      this.channel.push("add", node);
+    } // when selecting node from table
 
+  }, {
+    key: "visualizeNode",
+    value: function visualizeNode(node) {
+      this.channel.push("visualize", node);
+    } // when deselecting node from table
+
+  }, {
+    key: "cleanupNode",
+    value: function cleanupNode(node) {
+      this.channel.push("cleanup", node);
+    }
+  }]);
+
+  return _default;
+}();
+
+exports["default"] = _default;
 });
 
 ;require.register("js/process.js", function(exports, require, module) {
-// this is the name of the pid that otherwise unlinked pids will group around, to keep all of a node's pids together
-const GROUPING_PID = "application_controller";
+"use strict";
 
-export default class {
-  constructor(pid, info) {
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports["default"] = void 0;
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
+
+// this is the name of the pid that otherwise unlinked pids will group around, to keep all of a node's pids together
+var GROUPING_PID = "application_controller";
+
+var _default = /*#__PURE__*/function () {
+  function _default(pid, info) {
+    _classCallCheck(this, _default);
+
     this.id = pid;
     this.links = {};
     this.name = info.name;
@@ -1204,29 +1312,44 @@ export default class {
     }
   }
 
-  isGroupingProcess() {
-    return this.name == GROUPING_PID;
-  }
+  _createClass(_default, [{
+    key: "isGroupingProcess",
+    value: function isGroupingProcess() {
+      return this.name == GROUPING_PID;
+    }
+  }, {
+    key: "qualifiedName",
+    value: function qualifiedName() {
+      return this.name + "@" + this.node.replace(/@.*/, '');
+    }
+  }]);
 
-  qualifiedName() {
-    return this.name + "@" + this.node.replace(/@.*/, '');
-  }
-}
+  return _default;
+}();
 
+exports["default"] = _default;
 });
 
 ;require.register("js/user_socket.js", function(exports, require, module) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports["default"] = void 0;
+
+var _phoenix = require("phoenix");
+
 // NOTE: The contents of this file will only be executed if
 // you uncomment its entry in "assets/js/app.js".
-
 // Bring in Phoenix channels client library:
-import {Socket} from "phoenix"
-
 // And connect to the path in "lib/visualixir_vr_web/endpoint.ex". We pass the
 // token for authentication. Read below how it should be used.
-let socket = new Socket("/socket", {params: {token: window.userToken}})
-
-// When you connect, you'll often need to authenticate the client.
+var socket = new _phoenix.Socket("/socket", {
+  params: {
+    token: window.userToken
+  }
+}); // When you connect, you'll often need to authenticate the client.
 // For example, imagine you have an authentication plug, `MyAuth`,
 // which authenticates the session and assigns a `:current_user`.
 // If the current user exists you can assign the user's token in
@@ -1269,17 +1392,15 @@ let socket = new Socket("/socket", {params: {token: window.userToken}})
 //     end
 //
 // Finally, connect to the socket:
-socket.connect()
-console.log('connected to websocket')
 
-// Now that you are connected, you can join channels with a topic.
+socket.connect();
+console.log('connected to websocket'); // Now that you are connected, you can join channels with a topic.
 // Let's assume you have a channel with a topic named `room` and the
 // subtopic is its id - in this case 42:
 // let channel = socket.channel("nodes:lobby", {})
 
-
-export default socket
-
+var _default = socket;
+exports["default"] = _default;
 });
 
 ;require.register("___globals___", function(exports, require, module) {
@@ -1716,5 +1837,5 @@ d3.messageSequence = function() {
   return chart;
 }
 
-;require('app');
+;require('js/app.js');
 //# sourceMappingURL=app.js.map

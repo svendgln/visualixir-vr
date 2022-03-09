@@ -6,6 +6,7 @@
 defmodule VisualixirVr.Examples.MultiNodePingPong do
 
   alias VisualixirVr.Util
+  #require Logger
 
   @delay 1400
   @name :pinger
@@ -18,6 +19,7 @@ defmodule VisualixirVr.Examples.MultiNodePingPong do
   end
 
   defp spawn_pingers do
+    #Logger.debug("spawn 1")
     Node.list() ++ [List.first(Node.list())]
     |> spawn_pingers
   end
@@ -28,6 +30,7 @@ defmodule VisualixirVr.Examples.MultiNodePingPong do
   defp spawn_pingers([node | [next | _rest] = rest]) do
     Node.spawn(node, fn ->
       # IO.puts "started on #{inspect node()}"
+      #Logger.debug("spawn")
       pid = spawn(__MODULE__, :loop, [next])
       :erlang.register(@name, pid)
     end)

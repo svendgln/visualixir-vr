@@ -28,7 +28,7 @@ export default class {
     let self = this;
     // update node table
     let node_els = d3.select(this.container.find("ul").get(0)).selectAll("li.node_name").data(nodes);
-
+    console.log('updating nodes: ', nodes);
     node_els.exit().remove(); //IDK LOOK UP delete??
 
     let node =

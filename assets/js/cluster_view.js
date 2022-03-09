@@ -193,6 +193,7 @@ export default class {
   }
 
   stopMsgTraceAll(node) {
+    console.log('stop msg tracing');
     this.channel.push("stop_msg_trace_all", node);
     this.graph.stopMsgTraceAll();
     this.graph.update(false);

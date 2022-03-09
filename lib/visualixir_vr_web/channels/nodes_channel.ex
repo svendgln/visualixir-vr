@@ -11,6 +11,9 @@ defmodule VisualixirVrWeb.NodesChannel do
   @impl true
   def join(@channel, _payload, socket) do
     # nodes msg: %{nodes: list of known nodes} (must be map)
+    Logger.debug(nodes_msg())
+    Logger.debug("-----/-----")
+    Logger.debug(Node.list(:known))
     {:ok, nodes_msg(), socket}
   end
 

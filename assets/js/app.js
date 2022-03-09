@@ -12,7 +12,8 @@
 // The simplest option is to put them in assets/vendor and
 // import them using relative paths:
 //
-//     import "./vendor/some-package.js"
+console.log('BBBBBBBBBBBBBB');
+     import "../vendor/d3-msg-seq.js"
 //
 // Alternatively, you can `npm install some-package` and import
 // them using a path starting with the package name:

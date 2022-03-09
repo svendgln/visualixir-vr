@@ -1,6 +1,6 @@
 AFRAME.registerComponent('custom-controls', {
     schema: {
-        cameraRig: { type: 'selector', default: '#cameraRig' }, 
+        cameraRig: { type: 'selector', default: '#cameraRig' },
         camera: { type: 'selector', default: '#camera' },
         speed: { type: 'number', default: 0.1 },
         controllerLeft: { 'type': 'selector', default: '#controllerLeft' },
@@ -22,7 +22,7 @@ AFRAME.registerComponent('custom-controls', {
         // trigger
         controllerLeft.addEventListener('triggerdown', evt => {
             console.log('LEFT TRIGGER');
-
+            
         });
         controllerRight.addEventListener('triggerdown', evt => {
             console.log('RIGHT TRIGGER');
