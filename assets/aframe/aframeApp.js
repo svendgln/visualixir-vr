@@ -8,7 +8,7 @@ console.log("loading aframe app");
 //     console.log(files)
 // }
 
-//import "phoenix_html";
+import "phoenix_html";
 import socket from "./user_socket.js";
 window.socket = socket;
 //window.socket.channel("nodes", {}).join().receive("ok", () => console.log('FRFRFRF'));

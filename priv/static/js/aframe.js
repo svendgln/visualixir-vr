@@ -151,6 +151,8 @@ var __makeRelativeRequire = function(require, mappings, pref) {
 require.register("aframe/aframeApp.js", function(exports, require, module) {
 "use strict";
 
+require("phoenix_html");
+
 var _user_socket = _interopRequireDefault(require("./user_socket.js"));
 
 require("./test.js");
@@ -163,7 +165,6 @@ console.log("loading aframe app"); // const fs = require('fs');
 //     let files = fs.readdirSync(path).filter(file => file.endsWith('.js'));
 //     console.log(files)
 // }
-//import "phoenix_html";
 
 window.socket = _user_socket["default"]; //window.socket.channel("nodes", {}).join().receive("ok", () => console.log('FRFRFRF'));
 // temp fix
@@ -252,6 +253,10 @@ AFRAME.registerComponent('custom-controls', {
     });
     controllerRight.addEventListener('menudown', function (evt) {
       console.log('RIGHT MENU'); //call this.somefunction toggle menu idk
+
+      var m = document.querySelector('#menu');
+      m.setAttribute('visible', !m.getAttribute('visible'));
+      console.log('menu is now', !m.getAttribute('visible') ? 'not visible' : 'visible');
     }); // trackpad
 
     controllerLeft.addEventListener('axismove', function (evt) {
@@ -279,9 +284,9 @@ AFRAME.registerComponent('custom-controls', {
 
     vecZ.multiplyScalar(axisZ);
     vecX.multiplyScalar(axisX);
-    pos.add(vecZ); // add x component of vecX to position: only vecZ changes height
+    pos.add(vecZ); // add x and z component of vecX to position: only vecZ changes height
 
-    this.data.cameraRig.object3D.position.set(pos.x + vecX.getComponent(0), pos.y, pos.z); // reset NEEDED?
+    this.data.cameraRig.object3D.position.set(pos.x + vecX.getComponent(0), pos.y, pos.z + vecX.getComponent(2)); // reset NEEDED?
 
     this.vecZ.set(0, 0, -1);
     this.vecX.set(1, 0, 0);
@@ -365,6 +370,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 AFRAME.registerComponent('menu', {
   init: function init() {
     console.log('menu init');
+    var t = new Menu("aa");
     document.querySelector('a-scene').addEventListener('enter-vr', function () {
       console.log("ENTERED VR"); // attach menu to controller
 
@@ -376,6 +382,8 @@ AFRAME.registerComponent('menu', {
       entity.parentNode.removeChild(entity); //resize
 
       copy.setAttribute('scale', '0.5 0.5 0.5');
+      copy.setAttribute('rotation', '-30 0 0');
+      copy.setAttribute('position', '0 0.2 -0.2');
     });
   }
 }); // AFRAME.registerSystem('menu', {
@@ -396,14 +404,30 @@ AFRAME.registerComponent('menu', {
 //     }
 // });
 
-var Test = /*#__PURE__*/function () {
-  function Test(container) {
+var Menu = /*#__PURE__*/function () {
+  function Menu() {
     var _this = this;
 
-    _classCallCheck(this, Test);
+    _classCallCheck(this, Menu);
 
-    this.container = container;
+    console.log("MENU LOADED"); //container: menu element, split in node list and button panel
+    //this.container = container;
+
+    this.nodesContainer = document.querySelector('a-scene #menu-nodes');
+    console.log('CONTAINER: ', this.nodesContainer); // .groups: d3 object
+
+    this.containerHeight = this.nodesContainer.getAttribute('geometry').height;
+    this.containerWidth = this.nodesContainer.getAttribute('geometry').width;
     this.channel = window.socket.channel("nodes", {});
+    this.nodes = [];
+    this.nodeListSize = 3; //max visible nodes in the menu list at once
+
+    this.nodePadding = 0.05; //test
+
+    this.nodeWidth = this.containerWidth - this.nodePadding;
+    this.nodeHeight = 0.1;
+    this.maxNodes = Math.floor(this.containerHeight / (this.nodeHeight + this.nodePadding));
+    console.log('container height: ', this.containerHeight, '\nnode height+padding: ', this.nodeHeight + this.nodePadding, 'max #nodes -> ', this.maxNodes);
 
     var updateNodes = function updateNodes(msg) {
       _this.update(msg.nodes);
@@ -414,19 +438,46 @@ var Test = /*#__PURE__*/function () {
     this.channel.on("update", updateNodes);
   }
 
-  _createClass(Test, [{
+  _createClass(Menu, [{
     key: "update",
     value: function update(nodes) {
+      var _this2 = this;
+
       console.log('updating nodes: ', nodes);
+      var l = nodes.length; //d3
+
+      d3.select('a-scene').select('#menu-nodes').selectAll('a-entity').data(nodes).join('a-entity').attr('geometry', function (d, i) {
+        return "primitive: plane; width: ".concat(_this2.nodeWidth, "; height: ").concat(_this2.nodeHeight, ";");
+      }).attr('position', function (d, i) {
+        console.log(_this2.containerHeight / 2 - _this2.nodeHeight / 2);
+        var first = _this2.containerHeight / 2 - _this2.nodeHeight / 2 - _this2.nodePadding;
+        var offset = (_this2.nodeHeight + _this2.nodePadding) * -i;
+        return "0 ".concat(first + offset, " 0.01");
+      }).attr('material', function (d, i) {
+        return 'shader: flat; color: red';
+      }).attr('text', function (d, i) {
+        return "value: ".concat(d, "; align: center; wrapCount: 20");
+      }).attr('menu-button', function (d, i) {
+        return '';
+      }).attr('raycastable', function (d, i) {
+        return '';
+      }).each(function (d, i) {
+        //update DOM with correct attribute values
+        this.flushToDOM();
+        console.log('flushed: ', this);
+      });
     }
   }]);
 
-  return Test;
-}(); //temp :p
+  return Menu;
+}(); // temp :p
+// create instance in aframeApp..
+//let t = new Menu("aa");
+//moved to menu component init
+//t.update("a");
 
 
-exports["default"] = Test;
-var t = new Test("aa"); //t.update("a");
+exports["default"] = Menu;
 });
 
 require.register("aframe/components/menubutton.js", function(exports, require, module) {
@@ -459,7 +510,7 @@ AFRAME.registerComponent('menu-button', {
     highlightColor.offsetHSL(0.5, 0, 0);
     var colorHex = "#".concat(color.getHexString());
     var highlightHex = "#".concat(highlightColor.getHexString());
-    console.log(new THREE.Color(1, 0, 0).getHexString());
+    console.log(colorHex);
     el.setAttribute('animation__mouseenter', "property: components.material.material.color; type: color; to: " + highlightHex + "; startEvents: mouseenter; dur: 50");
     el.setAttribute('animation__mouseleave', "property: components.material.material.color; type: color; to: " + colorHex + "; startEvents: mouseleave; dur: 50");
     el.setAttribute('animation__click', "property: scale; from: 1 1 1; to: 1.1 1.1 1.1; startEvents: click; dur: 200; dir: alternate");

@@ -45,6 +45,9 @@ AFRAME.registerComponent('custom-controls', {
         controllerRight.addEventListener('menudown', evt => {
             console.log('RIGHT MENU');
             //call this.somefunction toggle menu idk
+            const m = document.querySelector('#menu');
+            m.setAttribute('visible', !m.getAttribute('visible'));
+            console.log('menu is now', !m.getAttribute('visible')? 'not visible' : 'visible');
         });
 
         // trackpad
@@ -80,8 +83,8 @@ AFRAME.registerComponent('custom-controls', {
         vecX.multiplyScalar(axisX);
 
         pos.add(vecZ);
-        // add x component of vecX to position: only vecZ changes height
-        this.data.cameraRig.object3D.position.set(pos.x + vecX.getComponent(0), pos.y, pos.z);
+        // add x and z component of vecX to position: only vecZ changes height
+        this.data.cameraRig.object3D.position.set(pos.x + vecX.getComponent(0), pos.y, pos.z + vecX.getComponent(2));
         // reset NEEDED?
         this.vecZ.set(0, 0, -1);
         this.vecX.set(1, 0, 0);

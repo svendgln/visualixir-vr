@@ -21,7 +21,7 @@ AFRAME.registerComponent('menu-button', {
         const colorHex = `#${color.getHexString()}`;
         const highlightHex = `#${highlightColor.getHexString()}`;
 
-        console.log(new THREE.Color(1, 0, 0).getHexString())
+        console.log(colorHex);
 
         el.setAttribute('animation__mouseenter', "property: components.material.material.color; type: color; to: " + highlightHex + "; startEvents: mouseenter; dur: 50");
         el.setAttribute('animation__mouseleave', "property: components.material.material.color; type: color; to: " + colorHex + "; startEvents: mouseleave; dur: 50");
