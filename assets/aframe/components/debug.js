@@ -28,6 +28,12 @@ AFRAME.registerComponent('testing', {
             //var currentPos = this.data.cameraRig.object3D.position;
             //currentPos.add(vecz);
             //console.log(this.data.cameraRig.object3D.position, currentPos);
+            
+
+            //rando test
+            //add 1.6 to height before pointing
+            //maybe fixed x/z rotation..
+            document.querySelector('#POINTER').object3D.lookAt(document.querySelector('#cameraRig').object3D.position);
         }
     }
 });

@@ -332,6 +332,11 @@ AFRAME.registerComponent('testing', {
       }); //var currentPos = this.data.cameraRig.object3D.position;
       //currentPos.add(vecz);
       //console.log(this.data.cameraRig.object3D.position, currentPos);
+      //rando test
+      //add 1.6 to height before pointing
+      //maybe fixed x/z rotation..
+
+      document.querySelector('#POINTER').object3D.lookAt(document.querySelector('#cameraRig').object3D.position);
     }
   }
 });
@@ -410,12 +415,10 @@ var Menu = /*#__PURE__*/function () {
 
     _classCallCheck(this, Menu);
 
-    console.log("MENU LOADED"); //container: menu element, split in node list and button panel
-    //this.container = container;
+    console.log("MENU LOADED"); //TODO: scroll button when #nodes > max
 
     this.nodesContainer = document.querySelector('a-scene #menu-nodes');
-    console.log('CONTAINER: ', this.nodesContainer); // .groups: d3 object
-
+    console.log('CONTAINER: ', this.nodesContainer);
     this.containerHeight = this.nodesContainer.getAttribute('geometry').height;
     this.containerWidth = this.nodesContainer.getAttribute('geometry').width;
     this.channel = window.socket.channel("nodes", {});
@@ -458,7 +461,7 @@ var Menu = /*#__PURE__*/function () {
       }).attr('text', function (d, i) {
         return "value: ".concat(d, "; align: center; wrapCount: 20");
       }).attr('menu-button', function (d, i) {
-        return '';
+        return "name: nodeClick; args: ".concat(d);
       }).attr('raycastable', function (d, i) {
         return '';
       }).each(function (d, i) {
@@ -483,7 +486,84 @@ exports["default"] = Menu;
 require.register("aframe/components/menubutton.js", function(exports, require, module) {
 "use strict";
 
+function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _unsupportedIterableToArray(arr, i) || _nonIterableRest(); }
+
+function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+
+function _iterableToArrayLimit(arr, i) { var _i = arr == null ? null : typeof Symbol !== "undefined" && arr[Symbol.iterator] || arr["@@iterator"]; if (_i == null) return; var _arr = []; var _n = true; var _d = false; var _s, _e; try { for (_i = _i.call(arr); !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"] != null) _i["return"](); } finally { if (_d) throw _e; } } return _arr; }
+
+function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
+
+function _createForOfIteratorHelper(o, allowArrayLike) { var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"]; if (!it) { if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e2) { throw _e2; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = it.call(o); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e3) { didErr = true; err = _e3; }, f: function f() { try { if (!normalCompletion && it["return"] != null) it["return"](); } finally { if (didErr) throw err; } } }; }
+
+function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
+
+function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) { arr2[i] = arr[i]; } return arr2; }
+
 console.log('MENU BUTTON LOADED');
+
+function nodeClick(target, args) {
+  console.log('clicked on', args[0]); //send websocket msg.. check target selected class..
+
+  document.lol = target;
+
+  if ($(target).hasClass('selected')) {
+    $(target).removeClass('selected');
+    target.setAttribute('text', 'color: white'); //target.flushToDOM();
+  } else {
+    $(target).addClass('selected');
+    target.setAttribute('text', 'color: green'); //target.flushToDOM();
+  }
+}
+
+AFRAME.registerSystem('menu-button', {
+  init: function init() {
+    //button name?/id -> click callbacks
+    this.commands = new Map();
+
+    function test(target, args) {
+      console.log('custom callback on', target, 'with args: ', args);
+    }
+
+    this.addCommand('test', test);
+    this.addCommand('nodeClick', nodeClick);
+    this.listCommands();
+  },
+  addCommand: function addCommand(name, func) {
+    this.commands.set(name, func);
+  },
+  delCommand: function delCommand(name) {
+    this.commands["delete"](name); //returns boolean
+  },
+  listCommands: function listCommands() {
+    //testing
+    var _iterator = _createForOfIteratorHelper(this.commands),
+        _step;
+
+    try {
+      for (_iterator.s(); !(_step = _iterator.n()).done;) {
+        var _step$value = _slicedToArray(_step.value, 2),
+            name = _step$value[0],
+            func = _step$value[1];
+
+        console.log(name, ' -> ', func);
+      }
+    } catch (err) {
+      _iterator.e(err);
+    } finally {
+      _iterator.f();
+    }
+  },
+  run: function run(name, target, args) {
+    var func = this.commands.get(name);
+
+    if (func) {
+      func(target, args);
+    } else {
+      console.log('invalid button callback on button ', target, 'with args: ', args);
+    }
+  }
+});
 AFRAME.registerComponent('menu-button', {
   /**
    * schema: color and text, idk what else
@@ -493,14 +573,22 @@ AFRAME.registerComponent('menu-button', {
       type: 'color',
       "default": '#FF0000'
     },
-    text: {
-      type: 'string',
-      "default": 'button'
+    name: {
+      type: 'string'
+    },
+    args: {
+      type: 'array',
+      "default": []
     }
   },
   init: function init() {
+    var _this = this;
+
     var el = this.el;
-    console.log('ID: ', this.id); //console.log('test: ', makeButton('#00FF00'));
+    document.el = el; //system should be accessibe through this.system?..
+
+    var system = this.el.sceneEl.systems['menu-button'];
+    console.log('ID: ', this.id, this.system); //console.log('test: ', makeButton('#00FF00'));
 
     var color = el.components.material.material.color;
     var r = color.r,
@@ -517,6 +605,10 @@ AFRAME.registerComponent('menu-button', {
     el.setAttribute('animation__click2', "property: scale; from: 1.1 1.1 1.1; to: 1 1 1; startEvents: click; dur: 200; delay: 200");
     el.addEventListener('click', function (evt) {
       console.log(evt); // evt.target for clicked el
+
+      console.log('SYSTEM: ', system);
+      var target = evt.target;
+      system.run(_this.data.name, target, _this.data.args);
     }); // test
     // let geometry = el.getObject3D('mesh').geometry;
     // console.log('geometry: ', geometry);

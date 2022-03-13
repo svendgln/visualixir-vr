@@ -1,16 +1,74 @@
 console.log('MENU BUTTON LOADED');
+
+function nodeClick(target, args) {
+    console.log('clicked on', args[0]);
+    //send websocket msg.. check target selected class..
+    document.lol = target;
+    if($(target).hasClass('selected')) {
+         $(target).removeClass('selected');
+         target.setAttribute('text', 'color: white');
+         //target.flushToDOM();
+    } else {
+        $(target).addClass('selected');
+        target.setAttribute('text', 'color: green');
+        //target.flushToDOM();
+    }
+}
+
+AFRAME.registerSystem('menu-button', {
+    
+    init: function() {
+        //button name?/id -> click callbacks
+        this.commands = new Map();
+        function test(target, args) {
+            console.log('custom callback on', target, 'with args: ', args);
+        }
+        this.addCommand('test', test);
+        this.addCommand('nodeClick', nodeClick);
+        this.listCommands();
+    },
+
+    addCommand: function(name, func) {
+        this.commands.set(name, func);
+    },
+
+    delCommand: function(name) {
+        this.commands.delete(name); //returns boolean
+    },
+
+    listCommands: function() {
+        //testing
+        for (let [name, func] of this.commands) {
+            console.log(name, ' -> ', func);
+        }
+    },
+
+    run: function(name, target, args) {
+        let func = this.commands.get(name);
+        if (func) {
+            func(target, args);
+        } else {
+            console.log('invalid button callback on button ', target, 'with args: ', args);
+        }
+    }
+})
+
 AFRAME.registerComponent('menu-button', {
     /**
      * schema: color and text, idk what else
      */
     schema: {
         color: { type: 'color', default: '#FF0000' },
-        text: { type: 'string', default: 'button' }
+        name: { type: 'string' },
+        args: { type: 'array', default: [] }
     },
 
     init: function () {
         const el = this.el;
-        console.log('ID: ', this.id);
+        document.el = el;
+        //system should be accessibe through this.system?..
+        const system = this.el.sceneEl.systems['menu-button'];
+        console.log('ID: ', this.id, this.system);
         //console.log('test: ', makeButton('#00FF00'));
 
         const color = el.components.material.material.color;
@@ -31,6 +89,9 @@ AFRAME.registerComponent('menu-button', {
         el.addEventListener('click', evt => {
             console.log(evt);
             // evt.target for clicked el
+            console.log('SYSTEM: ', system);
+            let target = evt.target;
+            system.run(this.data.name, target, this.data.args);
         });
 
         // test

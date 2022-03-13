@@ -24,6 +24,8 @@
             <a-entity id="LINE" line="start: 0 0 0; end: 1 0 0; color: blue"></a-entity>
             <a-entity id="LINE" line="start: 0 0 0; end: 0 0 -1; color: green"></a-entity>
         </a-entity>
+        <a-entity id="POINTER" position="0 5 0" geometry="primitive: plane; width: auto; height: auto" text="wrapCount: 15;value: LOLOLOL; align: center; color: green"></a-entity>
+
         <!-- default example -->
         <a-box id="TEST" position="-1 0.5 -3" rotation="0 45 0" color="#4CC3D9" src="#boxTexture" enterleave
             raycastable></a-box>
@@ -59,7 +61,7 @@
 
             <a-entity id="testbutton" geometry="primitive: cylinder; height: 0.1; radius: 0.15"
                 material="shader: flat; color: #FF0000; transparent: true; opacity: 0.5" rotation="90 0 0"
-                position="0.1 0.3 0" menu-button raycastable>
+                position="0.1 0.3 0" menu-button="name: test; args: 1, 2, 3" raycastable>
 
                 <a-text value="test button" rotation="-90 0 0" side="double" scale="0.3 0.3 0.3" position="0.2 0 0">
                 </a-text>

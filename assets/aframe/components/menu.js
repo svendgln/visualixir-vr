@@ -49,11 +49,10 @@ AFRAME.registerComponent('menu', {
 export default class Menu {
     constructor() {
         console.log("MENU LOADED")
-        //container: menu element, split in node list and button panel
-        //this.container = container;
+        //TODO: scroll button when #nodes > max
         this.nodesContainer = document.querySelector('a-scene #menu-nodes');
         console.log('CONTAINER: ', this.nodesContainer);
-            // .groups: d3 object
+        
         this.containerHeight = this.nodesContainer.getAttribute('geometry').height;
         this.containerWidth = this.nodesContainer.getAttribute('geometry').width;
         this.channel = window.socket.channel("nodes", {});
@@ -103,7 +102,7 @@ export default class Menu {
             .attr('text', (d, i) => {
                 return `value: ${d}; align: center; wrapCount: 20`
             })
-            .attr('menu-button', (d, i) => '')
+            .attr('menu-button', (d, i) => `name: nodeClick; args: ${d}`)
             .attr('raycastable', (d, i) => '')
             .each(function (d, i) {
                 //update DOM with correct attribute values
