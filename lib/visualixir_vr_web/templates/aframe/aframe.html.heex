@@ -16,6 +16,7 @@
     <a-scene>
         <a-assets>
             <img id="boxTexture" src="https://i.imgur.com/mYmmbrp.jpg">
+            <canvas id="cam2"></canvas>
         </a-assets>
 
         <!-- axis visualisation.. testing.. -->
@@ -56,14 +57,14 @@
             material="shader: flat; color: #ff5733; transparent: true; opacity: 0.5; side: double">
 
             <a-entity id="menu-nodes" geometry="primitive: plane; height: 0.9; width: 0.45"
-                material="shader: flat; color: #00ff00; side: double"
+                material="shader: flat; color: #ff0000; side: double; transparent: true; opacity: 0.5"
                 position="-0.225 0 0.01" raycastable></a-entity>
 
-            <a-entity id="testbutton" geometry="primitive: cylinder; height: 0.1; radius: 0.15"
+            <a-entity id="testbutton" geometry="primitive: cylinder; height: 0.05; radius: 0.05"
                 material="shader: flat; color: #FF0000; transparent: true; opacity: 0.5" rotation="90 0 0"
                 position="0.1 0.3 0" menu-button="name: test; args: 1, 2, 3" raycastable>
 
-                <a-text value="test button" rotation="-90 0 0" side="double" scale="0.3 0.3 0.3" position="0.2 0 0">
+                <a-text value="test button" rotation="-90 0 0" side="double" scale="0.3 0.3 0.3" position="0.08 0 0">
                 </a-text>
             </a-entity>
 
@@ -75,6 +76,14 @@
             <a-entity id="d3-nodes"></a-entity>
             <a-entity id="d3-links" position="0 0 0"></a-entity>
         </a-entity>
+
+        <!-- overview cam -->
+        <a-entity camera="active: false" camrender="cid: cam2; width: 500; height: 500"
+            position="5 15 5" rotation="-90 -90 0">
+        </a-entity>
+        <a-plane id="cam2" canvas-updater visible="true" position="-4 2 0" rotation="0 20 0" width="0.5" height="0.5"
+            material="src:#cam2; opacity: .95">
+        </a-plane>
 
     </a-scene>
 </body>

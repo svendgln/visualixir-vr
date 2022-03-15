@@ -40,11 +40,13 @@ AFRAME.registerComponent('custom-controls', {
         // menu button
         controllerLeft.addEventListener('menudown', evt => {
             console.log('LEFT MENU');
+            // toggle overview cam, on hide: remove components to prevent updates
+            // movable x/z when toggled?..
         });
 
         controllerRight.addEventListener('menudown', evt => {
             console.log('RIGHT MENU');
-            //call this.somefunction toggle menu idk
+            // call this.somefunction toggle menu idk
             const m = document.querySelector('#menu');
             m.setAttribute('visible', !m.getAttribute('visible'));
             console.log('menu is now', !m.getAttribute('visible')? 'not visible' : 'visible');
@@ -52,12 +54,12 @@ AFRAME.registerComponent('custom-controls', {
 
         // trackpad
         controllerLeft.addEventListener('axismove', evt => {
-            //position on trackpad, x,z values [-1,1]
+            // position on trackpad, x,z values [-1,1]
             const axis = evt.detail.axis;
             this.axis = axis;
         });
 
-        //right trackpad: use click and axis location to create arrow key functionality?.. for.. something..
+        // right trackpad: use click and axis location to create arrow key functionality?.. for.. something..
     },
 
     tick: function (time, timeDelta) {
@@ -65,7 +67,7 @@ AFRAME.registerComponent('custom-controls', {
         const vecZ = this.vecZ;
 
         const pos = this.data.cameraRig.object3D.position;
-        //camera rotation quaternion
+        // camera rotation quaternion
         this.quat.copy(this.data.camera.object3D.quaternion);
         //apply to direction vectors
         vecZ.applyQuaternion(this.quat);

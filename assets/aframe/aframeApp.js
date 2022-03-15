@@ -14,7 +14,7 @@ import Menu from "./components/menu.js";
 
 //window.socket.channel("nodes", {}).join().receive("ok", () => console.log('FRFRFRF'));
 // temp fix
-const components = ['clicktest.js', 'customcontrols.js', 'debug.js', 'enterleave.js', 'menubutton.js', 'menu.js']
+const components = ['clicktest.js', 'customcontrols.js', 'debug.js', 'enterleave.js', 'menubutton.js', 'menu.js', 'camrender.js']
 components.forEach(c => {
     console.log('importing ', c);
     require(`./components/${c}`);

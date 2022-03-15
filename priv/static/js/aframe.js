@@ -176,7 +176,7 @@ console.log("loading aframe app"); // const fs = require('fs');
 
 //window.socket.channel("nodes", {}).join().receive("ok", () => console.log('FRFRFRF'));
 // temp fix
-var components = ['clicktest.js', 'customcontrols.js', 'debug.js', 'enterleave.js', 'menubutton.js', 'menu.js'];
+var components = ['clicktest.js', 'customcontrols.js', 'debug.js', 'enterleave.js', 'menubutton.js', 'menu.js', 'camrender.js'];
 components.forEach(function (c) {
   console.log('importing ', c);
 
@@ -199,6 +199,79 @@ var AframeApp = /*#__PURE__*/_createClass(function AframeApp() {
 $(function () {
   window.socket = _user_socket["default"];
   window.app = new AframeApp();
+});
+});
+
+require.register("aframe/cluster_view.js", function(exports, require, module) {
+"use strict";
+});
+
+;require.register("aframe/components/camrender.js", function(exports, require, module) {
+"use strict";
+
+//https://jgbarah.github.io/aframe-playground/camrender-01/
+AFRAME.registerComponent('camrender', {
+  schema: {
+    fps: {
+      type: 'number',
+      "default": 90.0
+    },
+    cid: {
+      type: 'string',
+      "default": 'camRenderer'
+    },
+    height: {
+      type: 'number',
+      "default": 300
+    },
+    width: {
+      type: 'number',
+      "default": 400
+    }
+  },
+  init: function init() {
+    console.log('INIT CAM2'); // Counter for ticks since last render
+
+    this.counter = 0; // Find canvas element to be used for rendering
+
+    var canvasEl = document.getElementById(this.data.cid); // Create renderer
+
+    this.renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      canvas: canvasEl
+    });
+    this.renderer.setPixelRatio(window.devicePixelRatio);
+    this.renderer.setSize(this.data.width, this.data.height); // Set properties for renderer DOM element
+
+    this.renderer.domElement.crossorigin = "anonymous";
+    this.renderer.domElement.height = this.data.height;
+    this.renderer.domElement.width = this.data.width;
+  },
+  tick: function tick(time, timeDelta) {
+    var loopFPS = 1000.0 / timeDelta;
+    var hmdIsXFasterThanDesiredFPS = loopFPS / this.data.fps;
+    var renderEveryNthFrame = Math.round(hmdIsXFasterThanDesiredFPS);
+
+    if (this.counter % renderEveryNthFrame === 0) {
+      this.renderer.render(this.el.sceneEl.object3D, this.el.object3DMap.camera);
+    }
+
+    this.counter += 1;
+  }
+});
+AFRAME.registerComponent('canvas-updater', {
+  dependencies: ['geometry', 'material'],
+  tick: function tick() {
+    var el = this.el;
+    var material;
+    material = el.getObject3D('mesh').material;
+
+    if (!material.map) {
+      return;
+    }
+
+    material.map.needsUpdate = true;
+  }
 });
 });
 
@@ -276,10 +349,11 @@ AFRAME.registerComponent('custom-controls', {
     }); // menu button
 
     controllerLeft.addEventListener('menudown', function (evt) {
-      console.log('LEFT MENU');
+      console.log('LEFT MENU'); // toggle overview cam, on hide: remove components to prevent updates
+      // movable x/z when toggled?..
     });
     controllerRight.addEventListener('menudown', function (evt) {
-      console.log('RIGHT MENU'); //call this.somefunction toggle menu idk
+      console.log('RIGHT MENU'); // call this.somefunction toggle menu idk
 
       var m = document.querySelector('#menu');
       m.setAttribute('visible', !m.getAttribute('visible'));
@@ -287,15 +361,15 @@ AFRAME.registerComponent('custom-controls', {
     }); // trackpad
 
     controllerLeft.addEventListener('axismove', function (evt) {
-      //position on trackpad, x,z values [-1,1]
+      // position on trackpad, x,z values [-1,1]
       var axis = evt.detail.axis;
       _this.axis = axis;
-    }); //right trackpad: use click and axis location to create arrow key functionality?.. for.. something..
+    }); // right trackpad: use click and axis location to create arrow key functionality?.. for.. something..
   },
   tick: function tick(time, timeDelta) {
     var vecX = this.vecX;
     var vecZ = this.vecZ;
-    var pos = this.data.cameraRig.object3D.position; //camera rotation quaternion
+    var pos = this.data.cameraRig.object3D.position; // camera rotation quaternion
 
     this.quat.copy(this.data.camera.object3D.quaternion); //apply to direction vectors
 
@@ -549,6 +623,7 @@ AFRAME.registerSystem('menu-button', {
 
     function test(target, args) {
       console.log('custom callback on', target, 'with args: ', args);
+      document.test();
     }
 
     this.addCommand('test', test);
@@ -659,6 +734,58 @@ AFRAME.registerComponent('menu-button', {
 //     ></a-entity>
 //     `
 // }
+});
+
+;require.register("aframe/process.js", function(exports, require, module) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports["default"] = void 0;
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
+
+// this is the name of the pid that otherwise unlinked pids will group around, to keep all of a node's pids together
+var GROUPING_PID = "application_controller";
+
+var _default = /*#__PURE__*/function () {
+  function _default(pid, info) {
+    _classCallCheck(this, _default);
+
+    this.id = pid;
+    this.links = {};
+    this.name = info.name;
+    this.node = info.node;
+    this.application = info.application;
+    this.type = info.type;
+    this.msg_traced = info.msg_traced;
+
+    if (this.isGroupingProcess()) {
+      this.invisible_links = {};
+    }
+  }
+
+  _createClass(_default, [{
+    key: "isGroupingProcess",
+    value: function isGroupingProcess() {
+      return this.name == GROUPING_PID;
+    }
+  }, {
+    key: "qualifiedName",
+    value: function qualifiedName() {
+      return this.name + "@" + this.node.replace(/@.*/, '');
+    }
+  }]);
+
+  return _default;
+}();
+
+exports["default"] = _default;
 });
 
 ;require.register("aframe/test.js", function(exports, require, module) {

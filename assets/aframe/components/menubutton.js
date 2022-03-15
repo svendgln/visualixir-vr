@@ -25,6 +25,7 @@ AFRAME.registerSystem('menu-button', {
         this.commands = new Map();
         function test(target, args) {
             console.log('custom callback on', target, 'with args: ', args);
+            document.test();
         }
         this.addCommand('test', test);
         this.addCommand('nodeClick', nodeClick);
