@@ -10,20 +10,28 @@ console.log("loading aframe app");
 
 import "phoenix_html";
 import socket from "./user_socket.js";
+import Menu from "./components/menu.js";
 
 //window.socket.channel("nodes", {}).join().receive("ok", () => console.log('FRFRFRF'));
 // temp fix
+const components = ['clicktest.js', 'customcontrols.js', 'debug.js', 'enterleave.js', 'menubutton.js', 'menu.js']
+components.forEach(c => {
+    console.log('importing ', c);
+    require(`./components/${c}`);
+});
+
 class AframeApp {
     constructor() {
-        const components = ['clicktest.js', 'customcontrols.js', 'debug.js', 'enterleave.js', 'menubutton.js', 'menu.js']
-        components.forEach(c => require(`./components/${c}`))
+        this.menu = new Menu();
+        //test
+        this.channel = window.socket.channel("trace", {});
+        this.channel.join();
+        this.channel.on("visualize_node", msg => console.log('visualize ', msg));
     }
 }
-//document ready.. not working lol
-//$(() => {
-    console.log('RUN RUN RUN RUN YEET');
+// on document load
+$(() => {
     window.socket = socket;
     window.app = new AframeApp();
-//});
-
+})
 import './test.js';

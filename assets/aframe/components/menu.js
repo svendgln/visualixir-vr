@@ -2,7 +2,7 @@
 AFRAME.registerComponent('menu', {
     init: function () {
         console.log('menu init');
-        let t = new Menu("aa");
+        //let t = new Menu();
 
         document.querySelector('a-scene').addEventListener('enter-vr', function () {
             console.log("ENTERED VR");
@@ -25,26 +25,6 @@ AFRAME.registerComponent('menu', {
     }
 });
 
-// AFRAME.registerSystem('menu', {
-//     init: function () {
-//         console.log('CCCCCCCCCCCCCCCCCC');
-//         this.commands = new Map();
-//         this.channel = window.socket.channel("nodes", {});
-//         this.nodesContainer = document.querySelector('#menu-nodes');
-
-//         let updateNodes = msg => {
-//             this.update(msg.nodes);
-//         };
-
-//         this.channel.join().receive("ok", updateNodes);
-//         // update msg callback
-//         this.channel.on("update", updateNodes);
-//     },
-
-//     updateNodes: function (nodes) {
-//         console.log('yeet');
-//     }
-// });
 
 export default class Menu {
     constructor() {
@@ -109,6 +89,15 @@ export default class Menu {
                 this.flushToDOM();
                 console.log('flushed: ', this);
             });
+    }
+
+    visualizeNode(node) {
+        console.log('visualize temp');
+        this.channel.push('visualize', node);
+    }
+
+    cleanupNode(node) {
+        console.log('cleanup temp')
     }
 }
 // temp :p

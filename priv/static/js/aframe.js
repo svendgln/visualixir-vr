@@ -155,6 +155,8 @@ require("phoenix_html");
 
 var _user_socket = _interopRequireDefault(require("./user_socket.js"));
 
+var _menu = _interopRequireDefault(require("./components/menu.js"));
+
 require("./test.js");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
@@ -174,20 +176,30 @@ console.log("loading aframe app"); // const fs = require('fs');
 
 //window.socket.channel("nodes", {}).join().receive("ok", () => console.log('FRFRFRF'));
 // temp fix
+var components = ['clicktest.js', 'customcontrols.js', 'debug.js', 'enterleave.js', 'menubutton.js', 'menu.js'];
+components.forEach(function (c) {
+  console.log('importing ', c);
+
+  require("./components/".concat(c));
+});
+
 var AframeApp = /*#__PURE__*/_createClass(function AframeApp() {
   _classCallCheck(this, AframeApp);
 
-  var components = ['clicktest.js', 'customcontrols.js', 'debug.js', 'enterleave.js', 'menubutton.js', 'menu.js'];
-  components.forEach(function (c) {
-    return require("./components/".concat(c));
+  this.menu = new _menu["default"](); //test
+
+  this.channel = window.socket.channel("trace", {});
+  this.channel.join();
+  this.channel.on("visualize_node", function (msg) {
+    return console.log('visualize ', msg);
   });
-}); //document ready.. not working lol
-//$(() => {
+}); // on document load
 
 
-console.log('RUN RUN RUN RUN YEET');
-window.socket = _user_socket["default"];
-window.app = new AframeApp(); //});
+$(function () {
+  window.socket = _user_socket["default"];
+  window.app = new AframeApp();
+});
 });
 
 require.register("aframe/components/clicktest.js", function(exports, require, module) {
@@ -312,6 +324,7 @@ AFRAME.registerComponent('custom-controls', {
 require.register("aframe/components/debug.js", function(exports, require, module) {
 "use strict";
 
+console.log('more bullshit');
 AFRAME.registerComponent('testing', {
   schema: {
     cameraRig: {
@@ -389,8 +402,8 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 
 AFRAME.registerComponent('menu', {
   init: function init() {
-    console.log('menu init');
-    var t = new Menu("aa");
+    console.log('menu init'); //let t = new Menu();
+
     document.querySelector('a-scene').addEventListener('enter-vr', function () {
       console.log("ENTERED VR"); // attach menu to controller
 
@@ -406,23 +419,7 @@ AFRAME.registerComponent('menu', {
       copy.setAttribute('position', '0 0.2 -0.2');
     });
   }
-}); // AFRAME.registerSystem('menu', {
-//     init: function () {
-//         console.log('CCCCCCCCCCCCCCCCCC');
-//         this.commands = new Map();
-//         this.channel = window.socket.channel("nodes", {});
-//         this.nodesContainer = document.querySelector('#menu-nodes');
-//         let updateNodes = msg => {
-//             this.update(msg.nodes);
-//         };
-//         this.channel.join().receive("ok", updateNodes);
-//         // update msg callback
-//         this.channel.on("update", updateNodes);
-//     },
-//     updateNodes: function (nodes) {
-//         console.log('yeet');
-//     }
-// });
+});
 
 var Menu = /*#__PURE__*/function () {
   function Menu() {
@@ -485,6 +482,17 @@ var Menu = /*#__PURE__*/function () {
         console.log('flushed: ', this);
       });
     }
+  }, {
+    key: "visualizeNode",
+    value: function visualizeNode(node) {
+      console.log('visualize temp');
+      this.channel.push('visualize', node);
+    }
+  }, {
+    key: "cleanupNode",
+    value: function cleanupNode(node) {
+      console.log('cleanup temp');
+    }
   }]);
 
   return Menu;
@@ -518,16 +526,19 @@ function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len 
 console.log('MENU BUTTON LOADED');
 
 function nodeClick(target, args) {
-  console.log('clicked on', args[0]); //send websocket msg.. check target selected class..
+  var nodeName = args[0];
+  console.log('clicked on', nodeName); //send websocket msg.. check target selected class..
 
   document.lol = target;
 
   if ($(target).hasClass('selected')) {
     $(target).removeClass('selected');
-    target.setAttribute('text', 'color: white'); //target.flushToDOM();
+    target.setAttribute('text', 'color: white');
+    window.app.menu.cleanupNode(nodeName); //target.flushToDOM();
   } else {
     $(target).addClass('selected');
-    target.setAttribute('text', 'color: green'); //target.flushToDOM();
+    target.setAttribute('text', 'color: green');
+    window.app.menu.visualizeNode(nodeName); //target.flushToDOM();
   }
 }
 
@@ -600,7 +611,7 @@ AFRAME.registerComponent('menu-button', {
     var _this = this;
 
     var el = this.el;
-    document.el = el; //system should be accessibe through this.system?..
+    document.el = el; //system should be accessible through this.system?..
 
     var system = this.el.sceneEl.systems['menu-button'];
     console.log('ID: ', this.id, this.system); //console.log('test: ', makeButton('#00FF00'));

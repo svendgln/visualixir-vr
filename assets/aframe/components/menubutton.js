@@ -1,23 +1,26 @@
 console.log('MENU BUTTON LOADED');
 
 function nodeClick(target, args) {
-    console.log('clicked on', args[0]);
+    let nodeName = args[0]
+    console.log('clicked on', nodeName);
     //send websocket msg.. check target selected class..
     document.lol = target;
-    if($(target).hasClass('selected')) {
-         $(target).removeClass('selected');
-         target.setAttribute('text', 'color: white');
-         //target.flushToDOM();
+    if ($(target).hasClass('selected')) {
+        $(target).removeClass('selected');
+        target.setAttribute('text', 'color: white');
+        window.app.menu.cleanupNode(nodeName);
+        //target.flushToDOM();
     } else {
         $(target).addClass('selected');
         target.setAttribute('text', 'color: green');
+        window.app.menu.visualizeNode(nodeName);
         //target.flushToDOM();
     }
 }
 
 AFRAME.registerSystem('menu-button', {
-    
-    init: function() {
+
+    init: function () {
         //button name?/id -> click callbacks
         this.commands = new Map();
         function test(target, args) {
@@ -28,22 +31,22 @@ AFRAME.registerSystem('menu-button', {
         this.listCommands();
     },
 
-    addCommand: function(name, func) {
+    addCommand: function (name, func) {
         this.commands.set(name, func);
     },
 
-    delCommand: function(name) {
+    delCommand: function (name) {
         this.commands.delete(name); //returns boolean
     },
 
-    listCommands: function() {
+    listCommands: function () {
         //testing
         for (let [name, func] of this.commands) {
             console.log(name, ' -> ', func);
         }
     },
 
-    run: function(name, target, args) {
+    run: function (name, target, args) {
         let func = this.commands.get(name);
         if (func) {
             func(target, args);
@@ -66,7 +69,7 @@ AFRAME.registerComponent('menu-button', {
     init: function () {
         const el = this.el;
         document.el = el;
-        //system should be accessibe through this.system?..
+        //system should be accessible through this.system?..
         const system = this.el.sceneEl.systems['menu-button'];
         console.log('ID: ', this.id, this.system);
         //console.log('test: ', makeButton('#00FF00'));

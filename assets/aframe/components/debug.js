@@ -1,4 +1,4 @@
-
+console.log('more bullshit');
 AFRAME.registerComponent('testing', {
     schema: {
         cameraRig: { type: 'selector', default: '#cameraRig' },
