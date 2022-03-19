@@ -59,7 +59,7 @@
             <a-entity id="menu-nodes" geometry="primitive: plane; height: 0.9; width: 0.45"
                 material="shader: flat; color: #ff0000; side: double; transparent: true; opacity: 0.5"
                 position="-0.225 0 0.01" raycastable></a-entity>
-
+        <!-- TEST BUTTONS -->
             <a-entity id="testbutton" geometry="primitive: cylinder; height: 0.05; radius: 0.05"
                 material="shader: flat; color: #FF0000; transparent: true; opacity: 0.5" rotation="90 0 0"
                 position="0.1 0.3 0" menu-button="name: test; args: 1, 2, 3" raycastable>
@@ -67,6 +67,11 @@
                 <a-text value="test button" rotation="-90 0 0" side="double" scale="0.3 0.3 0.3" position="0.08 0 0">
                 </a-text>
             </a-entity>
+            <a-entity id="testbutton2" geometry="primitive: cylinder; height: 0.05; radius: 0.05"
+            material="shader: flat; color: #00FF00; transparent: true; opacity: 0.5" rotation="90 0 0"
+            position="0.1 0.2 0" menu-button="name: testRemove;" raycastable>
+            </a-entity>
+        <!-- TEST BUTTONS -->
 
         </a-entity>
 
@@ -75,6 +80,7 @@
             <a-box id="centerbox" position="0 0 0" width="0.2" height="0.2" depth="0.2" color="yellow"></a-box>
             <a-entity id="d3-nodes"></a-entity>
             <a-entity id="d3-links" position="0 0 0"></a-entity>
+            <a-entity id="d3-invisible-links" position="0 0 0"></a-entity>
         </a-entity>
 
         <!-- overview cam -->

@@ -40,27 +40,34 @@ const linksOLD = [
     { source: 3, target: 4 }
 ];
 
-const links = [
-    { source: 0, target: 3 },
-    { source: 2, target: 4 },
-]
+const links = []
+//     { source: 0, target: 3 },
+//     { source: 2, target: 4 },
+// ]
 
 // temp testing function
 function addNode() {
     nodes.unshift({});
     sim.nodes(nodes);
     sim.alpha(1).restart();
+    console.log('reloaded');
+}
+
+function removeNode() {
+    nodes.pop();
+    sim.nodes(nodes);
+    sim.alpha(1).restart();
 }
 
 function addLink(source, target) {
     if (source && target) {
-        let link = {source: source.index, target: target.index}
+        let link = { source: source.index, target: target.index }
         links.push(link)
         console.log(links)
         sim.force('link').links(links);
         // no check if exists..
         sim.alpha(1).restart();
-   }
+    }
 }
 
 const sim = d3.forceSimulation(nodes)
@@ -77,21 +84,39 @@ const sim = d3.forceSimulation(nodes)
 function ticked() {
     const container = d3.select('a-scene').select('#d3-nodes')
         .selectAll('a-entity')
-        .data(nodes)
-        .join('a-entity')
-        .attr('geometry', function (d, i) {
-            return `primitive: sphere; radius: 1`
-        })
-        .attr('position', function (d, i) {
-            return `${d.x} 1 ${d.y}`
-        })
-        .attr('material', function (d, i) {
-            return `shader: standard; color: red`
+        .data(nodes);
+    container.join(
+        enter => {
+            enter
+                .append('a-entity')
+                .merge(container)
+                .attr('geometry', function (d, i) {
+                    return `primitive: sphere; radius: 1`;
+                })
+                .attr('position', function (d, i) {
+                    return `${d.x} 1 ${d.y}`
+                })
+                .attr('material', function (d, i) {
+                    return `shader: standard; color: red`;
+                })
+        },
+        update => {
+            return update;
+        },
+        exit => {
+            exit.remove()
+                // .transition()
+                // .duration(500)
+                // .attr('material', 'color: green')
+                // .on('end', function () {
+                //     d3.select(this).remove();
+                // })
+                // .selection()
         });
 
     let test = d3.select('#d3-links').selectAll('a-entity').data(links, d => `${d.source}-${d.target}`)
-        .join('a-entity');
-        test.attr('line', function (d, i) {
+        .join('a-entity')
+        .attr('line', function (d, i) {
             let source = nodes[d.source.index];
             let target = nodes[d.target.index];
             //console.log(d);
@@ -111,7 +136,13 @@ function test() {
     console.log('adding node..');
     addNode();
     setTimeout(() => console.log('adding link..'), 1000);
-    setTimeout(() => addLink(nodes[0], nodes[5]), 1000);
+    //setTimeout(() => addLink(nodes[0], nodes[5]), 1000);
+}
+
+function test2() {
+    console.log('removing node');
+    removeNode();
 }
 //..
 document.test = test;
+document.test2 = test2;

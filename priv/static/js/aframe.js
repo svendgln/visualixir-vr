@@ -157,7 +157,7 @@ var _user_socket = _interopRequireDefault(require("./user_socket.js"));
 
 var _menu = _interopRequireDefault(require("./components/menu.js"));
 
-require("./test.js");
+var _cluster_view = _interopRequireDefault(require("./cluster_view.js"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
 
@@ -186,24 +186,122 @@ components.forEach(function (c) {
 var AframeApp = /*#__PURE__*/_createClass(function AframeApp() {
   _classCallCheck(this, AframeApp);
 
-  this.menu = new _menu["default"](); //test
-
-  this.channel = window.socket.channel("trace", {});
-  this.channel.join();
-  this.channel.on("visualize_node", function (msg) {
-    return console.log('visualize ', msg);
-  });
+  this.menu = new _menu["default"]();
+  this.cluster_view = new _cluster_view["default"]('NOT USED');
 }); // on document load
 
 
 $(function () {
   window.socket = _user_socket["default"];
   window.app = new AframeApp();
-});
+}); //import './test.js';
 });
 
 require.register("aframe/cluster_view.js", function(exports, require, module) {
 "use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports["default"] = void 0;
+
+var _graph = _interopRequireDefault(require("./graph.js"));
+
+var _process = _interopRequireDefault(require("./process.js"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
+
+var _default = /*#__PURE__*/function () {
+  function _default(graph_container) {
+    var _this = this;
+
+    _classCallCheck(this, _default);
+
+    console.log('CLUSTER CLASS loaded');
+    this.processes = {};
+    this.grouping_processes = {};
+    this.graph = new _graph["default"](graph_container, this);
+    this.channel = window.socket.channel('trace', {});
+    this.channel.join();
+    this.channel.on("visualize_node", function (msg) {
+      return _this.visualizeNode(msg);
+    });
+  }
+
+  _createClass(_default, [{
+    key: "visualizeNode",
+    value: function visualizeNode(msg) {
+      var _this2 = this;
+
+      console.log('VISUALIZEEEE ', msg);
+      $.each(msg.pids, function (pid, info) {
+        return _this2.addProcess(pid, info);
+      });
+      this.graph.update(true);
+    }
+  }, {
+    key: "addProcess",
+    value: function addProcess(pid, info) {
+      var _this3 = this;
+
+      if (this.processes[pid]) return; //exists
+
+      var process = this.processes[pid] = new _process["default"](pid, info); // 1 grouping process per node
+
+      if (process.isGroupingProcess()) {
+        this.grouping_processes[process.node] = process; // since this is the first time the grouping process has been seen, go through all processes and create invisble links
+
+        d3.values(this.processes).forEach(function (maybe_unlinked_process) {
+          if (!maybe_unlinked_process.isGroupingProcess()) {
+            _this3.addInvisibleLink(maybe_unlinked_process);
+          }
+        });
+      } else {
+        this.addInvisibleLink(process);
+      }
+
+      info.links.forEach(function (other_pid) {
+        return _this3.addLink(process, _this3.processes[other_pid]);
+      });
+    } // if grouping process not yet seen, skip
+    // grouping p seen -> add all skipped nodes
+    // each node afterwards will be added right away
+    // FIX LE EPIC EXPLANATION lol
+
+  }, {
+    key: "addInvisibleLink",
+    value: function addInvisibleLink(process) {
+      // 1 per node name
+      var grouping_process = this.grouping_processes[process.node];
+
+      if (grouping_process) {
+        // process was added before
+        grouping_process.invisible_links[process.id] = process;
+        this.graph.addInvisibleLink(grouping_process, process); //TODO
+      } // not yet seen, skip and add later..
+
+    }
+  }, {
+    key: "addLink",
+    value: function addLink(from, to) {
+      if (from && to) {
+        from.links[to.id] = to;
+        to.links[from.id] = from;
+        this.graph.addLink(from, to); //TODO
+      }
+    }
+  }]);
+
+  return _default;
+}();
+
+exports["default"] = _default;
 });
 
 ;require.register("aframe/components/camrender.js", function(exports, require, module) {
@@ -559,13 +657,13 @@ var Menu = /*#__PURE__*/function () {
   }, {
     key: "visualizeNode",
     value: function visualizeNode(node) {
-      console.log('visualize temp');
+      console.log('visualize callback');
       this.channel.push('visualize', node);
     }
   }, {
     key: "cleanupNode",
     value: function cleanupNode(node) {
-      console.log('cleanup temp');
+      console.log('cleanup callback');
     }
   }]);
 
@@ -597,7 +695,7 @@ function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o =
 
 function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) { arr2[i] = arr[i]; } return arr2; }
 
-console.log('MENU BUTTON LOADED');
+console.log('MENU BUTTON LOADED'); // move to file
 
 function nodeClick(target, args) {
   var nodeName = args[0];
@@ -626,6 +724,7 @@ AFRAME.registerSystem('menu-button', {
       document.test();
     }
 
+    this.addCommand('testRemove', document.test2);
     this.addCommand('test', test);
     this.addCommand('nodeClick', nodeClick);
     this.listCommands();
@@ -736,6 +835,144 @@ AFRAME.registerComponent('menu-button', {
 // }
 });
 
+;require.register("aframe/graph.js", function(exports, require, module) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports["default"] = void 0;
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
+
+var ALPHA_DECAY = 0.015,
+    PID_RADIUS = 1,
+    //node size in aframe
+//LABEL_OFFSET_X = 
+//LABEL_OFFSET_Y = 
+INVISIBLE_LINK_STRENGTH = 0.01,
+    LINK_LENGTH = 1,
+    //aframe
+REPULSION = -10,
+    //-LINK_LENGTH,
+CENTERING_STRENGTH = 0.5; // const nodes = [{ test: 'lol' }, {}, {}, {}, {}];
+
+var _default = /*#__PURE__*/function () {
+  function _default(container, cluster_view) {
+    var _this = this;
+
+    _classCallCheck(this, _default);
+
+    console.log('GRAPH loaded', container); //this.container = container;
+
+    this.cluster_view = cluster_view;
+    this.nodeContainer = d3.select('a-scene').select('#d3-nodes');
+    this.linkContainer = d3.select('a-scene').select('#d3-links');
+    this.invisibleLinkContainer = d3.select('a-scene').select('#d3-invisible-links');
+    this.forceCenter = d3.forceCenter(0, 0);
+    this.forceLink = d3.forceLink().distance(LINK_LENGTH);
+    this.forceInvisibleLink = d3.forceLink().strength(INVISIBLE_LINK_STRENGTH);
+    this.forceManyBody = d3.forceManyBody().strength(REPULSION);
+    this.forceSim = d3.forceSimulation().force('link', this.forceLink).force('invisiblelink', this.forceInvisibleLink).force('charge', this.forceManyBody).force('center', this.forceCenter).force('x', d3.forceX().strength(CENTERING_STRENGTH)).force('y', d3.forceY().strength(CENTERING_STRENGTH)).velocityDecay(0.2).alphaDecay(ALPHA_DECAY) // only change position in on tick?
+    // call update only from websocket callbacks?..
+    .on('tick', function () {
+      return _this.update(false);
+    });
+    this.links = {};
+    this.invisible_links = {};
+    this.msgs = {}; //rest not needed yet
+  } // Links
+
+
+  _createClass(_default, [{
+    key: "link_id",
+    value: function link_id(from, to) {
+      return [from.id, to.id].sort().join('-');
+    }
+  }, {
+    key: "addLink",
+    value: function addLink(source, target) {
+      if (source && target) {
+        var link = {
+          source: source,
+          target: target
+        },
+            id = this.link_id(source, target);
+        this.links[id] = link;
+      }
+    }
+  }, {
+    key: "addInvisibleLink",
+    value: function addInvisibleLink(source, target) {
+      if (source && target) {
+        var link = {
+          source: source,
+          target: target
+        },
+            id = this.link_id(source, target);
+        this.invisible_links[id] = link;
+      }
+    }
+  }, {
+    key: "update",
+    value: function update(force_restart) {
+      var _this2 = this;
+
+      var pids_list = d3.values(this.cluster_view.processes),
+          links_list = d3.values(this.links),
+          invisible_links_list = d3.values(this.invisible_links),
+          self = this;
+      var pids_by_node = d3.nest().key(function (d) {
+        return d.node;
+      }).map(pids_list),
+          nodes_list = pids_by_node.keys();
+      var processes = this.nodeContainer.selectAll('a-entity').data(pids_list, function (d) {
+        return d.id;
+      });
+      var links = this.linkContainer.selectAll('a-entity').data(links_list, function (d) {
+        return _this2.link_id(d.source, d.target);
+      });
+      var invisible_links = this.invisibleLinkContainer.selectAll('a-entity').data(invisible_links_list, function (d) {
+        return _this2.link_id(d.source, d.target);
+      }); //console.log('prcs', processes);
+
+      this.forceSim.nodes(pids_list);
+      this.forceSim.force('link').links(links_list);
+      this.forceSim.force('invisiblelink').links(invisible_links_list); // update processes
+
+      processes.join(function (enter) {
+        enter.append('a-entity').merge(processes).attr('geometry', function (d, i) {
+          //console.log('adding node');
+          return "primitive: sphere; radius: 1";
+        }).attr('position', function (d, i) {
+          return "".concat(d.x, " 1 ").concat(d.y);
+        }).attr('material', function (d, i) {
+          return "shader: standard; color: red";
+        });
+      }, function (update) {
+        return update;
+      }, function (exit) {
+        exit.remove();
+      });
+      links.join(function (enter) {
+        enter.append('a-entity').merge(links).attr('line', function (d, i) {
+          return "start: ".concat(d.source.x, " 0 ").concat(d.source.y, "; end: ").concat(d.target.x, " 0 ").concat(d.target.y, "; color: green");
+        });
+      });
+      if (force_restart) this.forceSim.alpha(1).restart();
+    }
+  }]);
+
+  return _default;
+}();
+
+exports["default"] = _default;
+});
+
 ;require.register("aframe/process.js", function(exports, require, module) {
 "use strict";
 
@@ -788,128 +1025,7 @@ var _default = /*#__PURE__*/function () {
 exports["default"] = _default;
 });
 
-;require.register("aframe/test.js", function(exports, require, module) {
-"use strict";
-
-console.log('test loaded');
-var DATA = [{
-  x: 10,
-  y: 10
-}, {
-  x: 2,
-  y: 2
-}, {
-  x: 4,
-  y: 4
-}, {
-  x: 6,
-  y: 6
-}, {
-  x: 8,
-  y: 8
-}];
-document.querySelector('a-scene #d3-container').addEventListener('loaded', console.log('el loaded')); // old tests
-
-function renderData() {
-  d3.select('a-scene').select('#d3-container').selectAll('a-entity').data(DATA).enter().append('a-entity').attr('geometry', function (d, i) {
-    return "primitive: sphere; radius: 1";
-  }).attr('position', function (d, i) {
-    console.log('adding sphere on pos', d.x, d.y);
-    return "".concat(d.x, " 1 ").concat(d.y);
-  }).attr('material', function (d, i) {
-    return "shader: standard; color: red";
-  });
-} // test force simulation:
-
-
-var nodes = [{
-  test: 'lol'
-}, {}, {}, {}, {}];
-var linksOLD = [{
-  source: 0,
-  target: 1
-}, {
-  source: 1,
-  target: 2
-}, {
-  source: 2,
-  target: 3
-}, {
-  source: 3,
-  target: 4
-}];
-var links = [{
-  source: 0,
-  target: 3
-}, {
-  source: 2,
-  target: 4
-}]; // temp testing function
-
-function addNode() {
-  nodes.unshift({});
-  sim.nodes(nodes);
-  sim.alpha(1).restart();
-}
-
-function addLink(source, target) {
-  if (source && target) {
-    var link = {
-      source: source.index,
-      target: target.index
-    };
-    links.push(link);
-    console.log(links);
-    sim.force('link').links(links); // no check if exists..
-
-    sim.alpha(1).restart();
-  }
-}
-
-var sim = d3.forceSimulation(nodes).force('charge', d3.forceManyBody().strength(-10)) //default
-.force('center', d3.forceCenter(0, 0)).force('link', d3.forceLink().distance(1).links(links)).force('x', d3.forceX().strength(0.5)).force('y', d3.forceY().strength(0.5)).velocityDecay(0.2).alphaDecay(0.02).on('tick', ticked);
-
-function ticked() {
-  var container = d3.select('a-scene').select('#d3-nodes').selectAll('a-entity').data(nodes).join('a-entity').attr('geometry', function (d, i) {
-    return "primitive: sphere; radius: 1";
-  }).attr('position', function (d, i) {
-    return "".concat(d.x, " 1 ").concat(d.y);
-  }).attr('material', function (d, i) {
-    return "shader: standard; color: red";
-  });
-  var test = d3.select('#d3-links').selectAll('a-entity').data(links, function (d) {
-    return "".concat(d.source, "-").concat(d.target);
-  }).join('a-entity');
-  test.attr('line', function (d, i) {
-    var source = nodes[d.source.index];
-    var target = nodes[d.target.index]; //console.log(d);
-
-    return "start: ".concat(source.x, " 0 ").concat(source.y, "; end: ").concat(target.x, " 0 ").concat(target.y, "; color: green");
-  }); // links.enter()
-  //     .append('a-entity')
-  //     .attr('line', function (d, i) {
-  //         let source = nodes[d.source];
-  //         let target = nodes[d.target];
-  //         return `start: ${source.x} 0 ${source.y}; end: ${target.x} 0 ${target.y}; color: green`
-  //     })
-}
-
-function test() {
-  console.log('adding node..');
-  addNode();
-  setTimeout(function () {
-    return console.log('adding link..');
-  }, 1000);
-  setTimeout(function () {
-    return addLink(nodes[0], nodes[5]);
-  }, 1000);
-} //..
-
-
-document.test = test;
-});
-
-require.register("aframe/user_socket.js", function(exports, require, module) {
+;require.register("aframe/user_socket.js", function(exports, require, module) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {

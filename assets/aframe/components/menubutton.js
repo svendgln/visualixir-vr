@@ -1,5 +1,5 @@
 console.log('MENU BUTTON LOADED');
-
+// move to file
 function nodeClick(target, args) {
     let nodeName = args[0]
     console.log('clicked on', nodeName);
@@ -27,6 +27,7 @@ AFRAME.registerSystem('menu-button', {
             console.log('custom callback on', target, 'with args: ', args);
             document.test();
         }
+        this.addCommand('testRemove', document.test2);
         this.addCommand('test', test);
         this.addCommand('nodeClick', nodeClick);
         this.listCommands();

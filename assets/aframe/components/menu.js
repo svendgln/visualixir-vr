@@ -92,12 +92,12 @@ export default class Menu {
     }
 
     visualizeNode(node) {
-        console.log('visualize temp');
+        console.log('visualize callback');
         this.channel.push('visualize', node);
     }
 
     cleanupNode(node) {
-        console.log('cleanup temp')
+        console.log('cleanup callback')
     }
 }
 // temp :p

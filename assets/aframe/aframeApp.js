@@ -11,6 +11,7 @@ console.log("loading aframe app");
 import "phoenix_html";
 import socket from "./user_socket.js";
 import Menu from "./components/menu.js";
+import ClusterView from "./cluster_view.js";
 
 //window.socket.channel("nodes", {}).join().receive("ok", () => console.log('FRFRFRF'));
 // temp fix
@@ -23,10 +24,7 @@ components.forEach(c => {
 class AframeApp {
     constructor() {
         this.menu = new Menu();
-        //test
-        this.channel = window.socket.channel("trace", {});
-        this.channel.join();
-        this.channel.on("visualize_node", msg => console.log('visualize ', msg));
+        this.cluster_view = new ClusterView('NOT USED');
     }
 }
 // on document load
@@ -34,4 +32,5 @@ $(() => {
     window.socket = socket;
     window.app = new AframeApp();
 })
-import './test.js';
+//import './test.js';
+
