@@ -4,9 +4,9 @@ const ALPHA_DECAY = 0.015,
     //LABEL_OFFSET_X = 
     //LABEL_OFFSET_Y = 
     INVISIBLE_LINK_STRENGTH = 0.01,
-    LINK_LENGTH = 1, //aframe
-    REPULSION = -10,//-LINK_LENGTH,
-    CENTERING_STRENGTH = 0.5;
+    LINK_LENGTH = 0.15,//0.15, //aframe
+    REPULSION = -0.5,//-0.15,//-LINK_LENGTH,
+    CENTERING_STRENGTH = 0.2;
 
 
 // const nodes = [{ test: 'lol' }, {}, {}, {}, {}];
@@ -84,7 +84,55 @@ export default class {
         this.forceSim.force('link').links(links_list);
         this.forceSim.force('invisiblelink').links(invisible_links_list);
 
-        // update processes
+        // update processes 
+        
+        let testo = d3.values(this.cluster_view.grouping_processes);
+        let shit = d3.select('a-scene').select('#d3-test')
+        .selectAll('a-entity').data(testo, d => d.id);
+
+        shit.join(
+            enter => {
+                enter
+                // .append('a-entity')
+                // .attr('geometry', function (d, i) {
+                //     return 'primitive: sphere'
+                // })
+                // .merge(shit)
+                .append('a-entity')
+                //.merge(shit)
+                .attr('geometry', function (d, i) {
+                    //return 'primitive: sphere'
+                    return 'primitive: plane; width: 20; height: auto;';
+                })
+                .attr('position', function (d, i) {
+                    //console.log(d);
+                    return `${d.x} 5 ${d.y}`
+                })
+                //make bg transparent
+                .attr('material', function(d, i) {
+                    return 'color: yellow'
+                })
+                .attr('text', function (d, i) {
+                    return `wrapCount: 20; value: ${d.node}; align: center; color: blue`
+                })
+                // .each(function(d, i) {
+                //     this.flushToDOM()
+                // })
+                
+            },
+            update => {
+                update
+                .attr('position', function (d, i) {
+                    //console.log(d);
+                    return `${d.x} 5 ${d.y}`
+                })
+            }
+        )
+        
+        
+        
+
+
         processes.join(
             enter => {
                 enter
@@ -92,13 +140,16 @@ export default class {
                     .merge(processes)
                     .attr('geometry', function (d, i) {
                         //console.log('adding node');
-                        return `primitive: sphere; radius: 1`;
+                        return `primitive: sphere; radius: 0.2`;
                     })
                     .attr('position', function (d, i) {
-                        return `${d.x} 1 ${d.y}`
+                        //console.log(d)
+                        return `${d.x} 0 ${d.y}`
                     })
                     .attr('material', function (d, i) {
-                        return `shader: standard; color: red`;
+                        let color = 'red';
+                        if (d.node == 'TEST@CORSAIR') color = 'green';
+                        return `shader: standard; color: ${color}`;
                     });
             },
             update => {
@@ -118,7 +169,11 @@ export default class {
                         return `start: ${d.source.x} 0 ${d.source.y}; end: ${d.target.x} 0 ${d.target.y}; color: green`;
                     })
             }
-        )
+        );
+
+        invisible_links.exit().remove();
+        let new_invisible_links = invisible_links.enter()
+        invisible_links = new_invisible_links.merge(invisible_links);
 
 
 
