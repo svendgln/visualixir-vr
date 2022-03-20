@@ -23,7 +23,7 @@ components.forEach(c => {
 
 class AframeApp {
     constructor() {
-        this.menu = new Menu();
+        //this.menu = new Menu();
         this.cluster_view = new ClusterView('NOT USED');
     }
 }

@@ -3,6 +3,7 @@ AFRAME.registerComponent('menu', {
     init: function () {
         console.log('menu init');
         //let t = new Menu();
+        window.app.menu = new Menu();
 
         document.querySelector('a-scene').addEventListener('enter-vr', function () {
             console.log("ENTERED VR");
@@ -32,7 +33,7 @@ export default class Menu {
         //TODO: scroll button when #nodes > max
         this.nodesContainer = document.querySelector('a-scene #menu-nodes');
         console.log('CONTAINER: ', this.nodesContainer);
-        
+        console.log(this.nodesContainer.getAttribute('geometry'));
         this.containerHeight = this.nodesContainer.getAttribute('geometry').height;
         this.containerWidth = this.nodesContainer.getAttribute('geometry').width;
         this.channel = window.socket.channel("nodes", {});

@@ -186,7 +186,7 @@ components.forEach(function (c) {
 var AframeApp = /*#__PURE__*/_createClass(function AframeApp() {
   _classCallCheck(this, AframeApp);
 
-  this.menu = new _menu["default"]();
+  //this.menu = new Menu();
   this.cluster_view = new _cluster_view["default"]('NOT USED');
 }); // on document load
 
@@ -576,6 +576,7 @@ AFRAME.registerComponent('menu', {
   init: function init() {
     console.log('menu init'); //let t = new Menu();
 
+    window.app.menu = new Menu();
     document.querySelector('a-scene').addEventListener('enter-vr', function () {
       console.log("ENTERED VR"); // attach menu to controller
 
@@ -603,6 +604,7 @@ var Menu = /*#__PURE__*/function () {
 
     this.nodesContainer = document.querySelector('a-scene #menu-nodes');
     console.log('CONTAINER: ', this.nodesContainer);
+    console.log(this.nodesContainer.getAttribute('geometry'));
     this.containerHeight = this.nodesContainer.getAttribute('geometry').height;
     this.containerWidth = this.nodesContainer.getAttribute('geometry').width;
     this.channel = window.socket.channel("nodes", {});
@@ -843,11 +845,17 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports["default"] = void 0;
 
+var _process = _interopRequireDefault(require("./process"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
+
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
 
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
+
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
 var ALPHA_DECAY = 0.015,
     PID_RADIUS = 1,
@@ -859,13 +867,39 @@ INVISIBLE_LINK_STRENGTH = 0.01,
     //0.15, //aframe
 REPULSION = -0.5,
     //-0.15,//-LINK_LENGTH,
-CENTERING_STRENGTH = 0.2; // const nodes = [{ test: 'lol' }, {}, {}, {}, {}];
+CENTERING_STRENGTH = 0.2;
 
 var _default = /*#__PURE__*/function () {
   function _default(container, cluster_view) {
     var _this = this;
 
     _classCallCheck(this, _default);
+
+    _defineProperty(this, "test", setInterval(function () {
+      var rig = document.querySelector('#cameraRig');
+      var camPos = rig.object3D.position;
+      var nodeList = _this.processes._groups[0];
+
+      for (var i = 0; i < nodeList.length; i++) {
+        var node = nodeList[i];
+
+        if (node) {
+          var d = node.__data__; // +5 to compensate for relative position of graph, can probably get world pos
+
+          var dist = Math.sqrt(Math.pow(d.x + 5 - camPos.x, 2) + Math.pow(d.y + 5 - camPos.z, 2)); // console.log(d.x, d.y, camPos.x, camPos.z, dist)
+          // let line = document.querySelector('#LINETEST');
+          // line.setAttribute('line', `start: ${d.x} 0 ${d.y}; end: ${camPos.x} 0 ${camPos.z}; color: green`)
+
+          if (dist < 3) {
+            console.log(d);
+            node.setAttribute('material', 'color: green');
+          }
+
+          ;
+        } //console.log(camPos.x ) 
+
+      }
+    }, 1000));
 
     console.log('GRAPH loaded', container); //this.container = container;
 
@@ -885,6 +919,10 @@ var _default = /*#__PURE__*/function () {
     this.links = {};
     this.invisible_links = {};
     this.msgs = {}; //rest not needed yet
+    //TEST
+
+    this.cameraRig = document.querySelector('#cameraRig');
+    this.processes = null;
   } // Links
 
 
@@ -932,7 +970,10 @@ var _default = /*#__PURE__*/function () {
           nodes_list = pids_by_node.keys();
       var processes = this.nodeContainer.selectAll('a-entity').data(pids_list, function (d) {
         return d.id;
-      });
+      }); //test
+
+      this.processes = processes; //
+
       var links = this.linkContainer.selectAll('a-entity').data(links_list, function (d) {
         return _this2.link_id(d.source, d.target);
       });
@@ -947,11 +988,12 @@ var _default = /*#__PURE__*/function () {
       var testo = d3.values(this.cluster_view.grouping_processes);
       var shit = d3.select('a-scene').select('#d3-test').selectAll('a-entity').data(testo, function (d) {
         return d.id;
-      });
+      }); //rename lol
+
       shit.join(function (enter) {
         enter // .append('a-entity')
         // .attr('geometry', function (d, i) {
-        //     return 'primitive: sphere'
+        //     return 'primitive: sphere' 
         // })
         // .merge(shit)
         .append('a-entity') //.merge(shit)
@@ -963,35 +1005,59 @@ var _default = /*#__PURE__*/function () {
           return "".concat(d.x, " 5 ").concat(d.y);
         }) //make bg transparent
         .attr('material', function (d, i) {
-          return 'color: yellow';
+          return 'color: yellow; transparent: true; opacity: 0';
         }).attr('text', function (d, i) {
           return "wrapCount: 20; value: ".concat(d.node, "; align: center; color: blue");
         }); // .each(function(d, i) {
         //     this.flushToDOM()
         // })
       }, function (update) {
+        //needed?
         update.attr('position', function (d, i) {
           //console.log(d);
           return "".concat(d.x, " 5 ").concat(d.y);
         });
       });
       processes.join(function (enter) {
-        enter.append('a-entity').merge(processes).attr('geometry', function (d, i) {
-          //console.log('adding node');
+        enter.append('a-entity') //.merge(processes)
+        .attr('geometry', function (d, i) {
+          console.log('adding node');
           return "primitive: sphere; radius: 0.2";
         }).attr('position', function (d, i) {
-          //console.log(d)
+          console.log('a');
           return "".concat(d.x, " 0 ").concat(d.y);
         }).attr('material', function (d, i) {
           var color = 'red';
           if (d.node == 'TEST@CORSAIR') color = 'green';
           return "shader: standard; color: ".concat(color);
+        }) // add node information text
+        .each(function (d, i) {
+          console.log('b'); //cant be entity.. selectAll entity error
+
+          var name = document.createElement('a-plane');
+          name.setAttribute('material', 'transparent: true; opacity: 0');
+          name.setAttribute('geometry', 'primitive: plane; width: 2; height: auto');
+          name.setAttribute('text', "wrapCount: 20; value: ".concat(d.name, "; align: center; color: blue; side: double"));
+          name.setAttribute('position', "0 0.5 0");
+          this.appendChild(name);
         });
       }, function (update) {
-        return update;
+        //return update
+        update.attr('position', function (d, i) {
+          return "".concat(d.x, " 0 ").concat(d.y);
+        });
       }, function (exit) {
         exit.remove();
-      });
+      }); //move to node update maybe
+      //node info when distance < x
+      //     let nodeList = processes._groups[0];
+      //    // console.log(nodeList[0])
+      //     let camPos = this.cameraRig.object3D.position;
+      //     for (let i = 0; i < nodeList.length; i++) {
+      //         const data = nodeList[i].__data__;
+      //         const dist = Math.sqrt((data.x - camPos.x)^2 + (data.y - camPos.y)^2);
+      //     }
+
       links.join(function (enter) {
         enter.append('a-entity').merge(links).attr('line', function (d, i) {
           return "start: ".concat(d.source.x, " 0 ").concat(d.source.y, "; end: ").concat(d.target.x, " 0 ").concat(d.target.y, "; color: green");

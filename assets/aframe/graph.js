@@ -1,3 +1,4 @@
+import process from "./process";
 
 const ALPHA_DECAY = 0.015,
     PID_RADIUS = 1, //node size in aframe
@@ -9,7 +10,6 @@ const ALPHA_DECAY = 0.015,
     CENTERING_STRENGTH = 0.2;
 
 
-// const nodes = [{ test: 'lol' }, {}, {}, {}, {}];
 
 export default class {
     constructor(container, cluster_view) {
@@ -43,6 +43,10 @@ export default class {
         this.invisible_links = {};
         this.msgs = {};
         //rest not needed yet
+
+        //TEST
+        this.cameraRig = document.querySelector('#cameraRig');
+        this.processes = null;
     }
 
     // Links
@@ -76,6 +80,9 @@ export default class {
             nodes_list = pids_by_node.keys();
 
         let processes = this.nodeContainer.selectAll('a-entity').data(pids_list, d => d.id);
+        //test
+        this.processes = processes;
+        //
         let links = this.linkContainer.selectAll('a-entity').data(links_list, d => this.link_id(d.source, d.target));
         let invisible_links = this.invisibleLinkContainer.selectAll('a-entity').data(invisible_links_list, d => this.link_id(d.source, d.target));
         //console.log('prcs', processes);
@@ -85,80 +92,111 @@ export default class {
         this.forceSim.force('invisiblelink').links(invisible_links_list);
 
         // update processes 
-        
+
         let testo = d3.values(this.cluster_view.grouping_processes);
         let shit = d3.select('a-scene').select('#d3-test')
-        .selectAll('a-entity').data(testo, d => d.id);
-
+            .selectAll('a-entity').data(testo, d => d.id);
+        //rename lol
         shit.join(
             enter => {
                 enter
-                // .append('a-entity')
-                // .attr('geometry', function (d, i) {
-                //     return 'primitive: sphere'
-                // })
-                // .merge(shit)
-                .append('a-entity')
-                //.merge(shit)
-                .attr('geometry', function (d, i) {
-                    //return 'primitive: sphere'
-                    return 'primitive: plane; width: 20; height: auto;';
-                })
-                .attr('position', function (d, i) {
-                    //console.log(d);
-                    return `${d.x} 5 ${d.y}`
-                })
-                //make bg transparent
-                .attr('material', function(d, i) {
-                    return 'color: yellow'
-                })
-                .attr('text', function (d, i) {
-                    return `wrapCount: 20; value: ${d.node}; align: center; color: blue`
-                })
+                    // .append('a-entity')
+                    // .attr('geometry', function (d, i) {
+                    //     return 'primitive: sphere' 
+                    // })
+                    // .merge(shit)
+                    .append('a-entity')
+                    //.merge(shit)
+                    .attr('geometry', function (d, i) {
+                        //return 'primitive: sphere'
+                        return 'primitive: plane; width: 20; height: auto;';
+                    })
+                    .attr('position', function (d, i) {
+                        //console.log(d);
+                        return `${d.x} 5 ${d.y}`
+                    })
+                    //make bg transparent
+                    .attr('material', function (d, i) {
+                        return 'color: yellow; transparent: true; opacity: 0'
+                    })
+                    .attr('text', function (d, i) {
+                        return `wrapCount: 20; value: ${d.node}; align: center; color: blue`
+                    })
                 // .each(function(d, i) {
                 //     this.flushToDOM()
                 // })
-                
+
             },
             update => {
+                //needed?
                 update
-                .attr('position', function (d, i) {
-                    //console.log(d);
-                    return `${d.x} 5 ${d.y}`
-                })
+                    .attr('position', function (d, i) {
+                        //console.log(d);
+                        return `${d.x} 5 ${d.y}`
+                    })
             }
         )
-        
-        
-        
+
+
+
 
 
         processes.join(
             enter => {
                 enter
                     .append('a-entity')
-                    .merge(processes)
+                    //.merge(processes)
                     .attr('geometry', function (d, i) {
-                        //console.log('adding node');
+                        console.log('adding node');
                         return `primitive: sphere; radius: 0.2`;
                     })
                     .attr('position', function (d, i) {
-                        //console.log(d)
+                        console.log('a')
                         return `${d.x} 0 ${d.y}`
                     })
                     .attr('material', function (d, i) {
                         let color = 'red';
                         if (d.node == 'TEST@CORSAIR') color = 'green';
                         return `shader: standard; color: ${color}`;
-                    });
+                    })
+                    // add node information text
+                    .each(function (d, i) {
+                        console.log('b')
+                        //cant be entity.. selectAll entity error
+                        let name = document.createElement('a-plane');
+                        name.setAttribute('material', 'transparent: true; opacity: 0');
+                        name.setAttribute('geometry', 'primitive: plane; width: 2; height: auto');
+                        name.setAttribute('text', `wrapCount: 20; value: ${d.name}; align: center; color: blue; side: double`);
+                        name.setAttribute('position', `0 0.5 0`);
+
+                        this.appendChild(name);
+                    })
             },
             update => {
-                return update;
+                //return update
+                update
+                    .attr('position', function (d, i) {
+
+                        return `${d.x} 0 ${d.y}`
+                    })
             },
             exit => {
                 exit.remove();
             }
         );
+
+
+
+        //move to node update maybe
+        //node info when distance < x
+        //     let nodeList = processes._groups[0];
+        //    // console.log(nodeList[0])
+        //     let camPos = this.cameraRig.object3D.position;
+        //     for (let i = 0; i < nodeList.length; i++) {
+        //         const data = nodeList[i].__data__;
+        //         const dist = Math.sqrt((data.x - camPos.x)^2 + (data.y - camPos.y)^2);
+       
+        //     }
 
         links.join(
             enter => {
@@ -184,4 +222,30 @@ export default class {
         if (force_restart)
             this.forceSim.alpha(1).restart();
     }
+
+    
+// kinda shit position.. idk
+    test = setInterval(() => {
+        let rig = document.querySelector('#cameraRig');
+        let camPos = rig.object3D.position;
+        let nodeList = this.processes._groups[0];
+        for (let i = 0; i < nodeList.length; i++) {
+            let node = nodeList[i];
+            if (node) {
+                let d = node.__data__;
+                // +5 to compensate for relative position of graph, can probably get world pos
+                let dist = Math.sqrt(((d.x+5) - camPos.x) ** 2 + ((d.y+5) - camPos.z) ** 2);
+                // console.log(d.x, d.y, camPos.x, camPos.z, dist)
+
+               // let line = document.querySelector('#LINETEST');
+                // line.setAttribute('line', `start: ${d.x} 0 ${d.y}; end: ${camPos.x} 0 ${camPos.z}; color: green`)
+
+                if (dist < 3) {
+                    console.log(d);
+                    node.setAttribute('material', 'color: green')
+                };
+            }
+            //console.log(camPos.x ) 
+        }
+    }, 1000)
 }

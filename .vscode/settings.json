@@ -1,3 +1,4 @@
 {
-    "window.title": "${dirty}(╯°□°）╯ ${activeEditorShort}${separator}${rootName}${separator}"
+    "window.title": "${dirty}(╯°□°）╯ ${activeEditorShort}${separator}${rootName}${separator}",
+    "editor.guides.bracketPairs": true
 }
