@@ -22,7 +22,12 @@ AFRAME.registerComponent('custom-controls', {
         // trigger
         controllerLeft.addEventListener('triggerdown', evt => {
             console.log('LEFT TRIGGER');
-            
+            console.log(evt)
+            // could differentiate between left/right controller..
+            // for now just using click event..
+            //
+            // on click check intersection
+            // fire left/right click event on intersected el..?
         });
         controllerRight.addEventListener('triggerdown', evt => {
             console.log('RIGHT TRIGGER');
@@ -47,6 +52,8 @@ AFRAME.registerComponent('custom-controls', {
         controllerRight.addEventListener('menudown', evt => {
             console.log('RIGHT MENU');
             // call this.somefunction toggle menu idk
+
+            //get active tab id, cycle to next on side grip etc
             const m = document.querySelector('#menu');
             m.setAttribute('visible', !m.getAttribute('visible'));
             console.log('menu is now', !m.getAttribute('visible')? 'not visible' : 'visible');
@@ -60,6 +67,7 @@ AFRAME.registerComponent('custom-controls', {
         });
 
         // right trackpad: use click and axis location to create arrow key functionality?.. for.. something..
+        // can be different depending on active menu tab
     },
 
     tick: function (time, timeDelta) {

@@ -1,11 +1,16 @@
 import Graph from './graph.js';
 import Process from './process.js';
+import { shiftColor } from './util.js';
+import cfg from './config';
 
 export default class {
     constructor(graph_container) {
         console.log('CLUSTER CLASS loaded')
+        console.log('CFG', cfg)
+        console.log(cfg.linkColor)
         this.processes = {};
         this.grouping_processes = {};
+        //this.nodes = 0; //active nodes, used to assign each a different color
 
         this.graph = new Graph(graph_container, this);
 
@@ -18,17 +23,22 @@ export default class {
     visualizeNode(msg) {
         console.log('VISUALIZEEEE ', msg);
         $.each(msg.pids, (pid, info) => this.addProcess(pid, info));
+        //this.nodes++;
         this.graph.update(true);
     }
 
     addProcess(pid, info) {
         if (this.processes[pid]) return; //exists
 
+        //let color = cfg.COLORS[this.nodes % cfg.COLORS.length];
+        let color = window.app.menuController.nodeMenu.nodeColors.get(info.node);
+        info.color = new THREE.Color(color);
         let process = this.processes[pid] = new Process(pid, info);
 
         // 1 grouping process per node
         if (process.isGroupingProcess()) {
             this.grouping_processes[process.node] = process;
+            console.log(process)
 
             // since this is the first time the grouping process has been seen, go through all processes and create invisble links
             d3.values(this.processes).forEach(maybe_unlinked_process => {
@@ -63,5 +73,9 @@ export default class {
             to.links[from.id] = from;
             this.graph.addLink(from, to); //TODO
         }
+    }
+
+    collapseNode(pid) {
+        console.log('nothing yet');
     }
 }

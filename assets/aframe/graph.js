@@ -1,4 +1,6 @@
-import process from "./process";
+import process from './process';
+import { offsetColor } from './util';
+import cfg from './config';
 
 const ALPHA_DECAY = 0.015,
     PID_RADIUS = 1, //node size in aframe
@@ -47,6 +49,7 @@ export default class {
         //TEST
         this.cameraRig = document.querySelector('#cameraRig');
         this.processes = null;
+        setInterval(() => { console.log('LOL'); this.testFunc() }, 1000)
     }
 
     // Links
@@ -93,9 +96,9 @@ export default class {
 
         // update processes 
 
-        let testo = d3.values(this.cluster_view.grouping_processes);
+        let grouping_pids_list = d3.values(this.cluster_view.grouping_processes);
         let shit = d3.select('a-scene').select('#d3-test')
-            .selectAll('a-entity').data(testo, d => d.id);
+            .selectAll('a-entity').data(grouping_pids_list, d => d.id);
         //rename lol
         shit.join(
             enter => {
@@ -107,20 +110,20 @@ export default class {
                     // .merge(shit)
                     .append('a-entity')
                     //.merge(shit)
-                    .attr('geometry', function (d, i) {
-                        //return 'primitive: sphere'
-                        return 'primitive: plane; width: 20; height: auto;';
-                    })
+                    // .attr('geometry', function (d, i) {
+                    //     //return 'primitive: sphere'
+                    //     return 'primitive: plane; width: 20; height: auto;';
+                    // })
                     .attr('position', function (d, i) {
                         //console.log(d);
                         return `${d.x} 5 ${d.y}`
                     })
                     //make bg transparent
-                    .attr('material', function (d, i) {
-                        return 'color: yellow; transparent: true; opacity: 0'
-                    })
+                    // .attr('material', function (d, i) {
+                    //     return 'color: yellow; transparent: true; opacity: 0'
+                    // })
                     .attr('text', function (d, i) {
-                        return `wrapCount: 20; value: ${d.node}; align: center; color: blue`
+                        return `wrapCount: 20; value: ${d.node}; align: center; color: blue; side: double; width: 20`
                     })
                 // .each(function(d, i) {
                 //     this.flushToDOM()
@@ -155,14 +158,35 @@ export default class {
                         return `${d.x} 0 ${d.y}`
                     })
                     .attr('material', function (d, i) {
-                        let color = 'red';
-                        if (d.node == 'TEST@CORSAIR') color = 'green';
-                        return `shader: standard; color: ${color}`;
+                        let type = d.type;
+                        //hex value to string
+                        //let color = `#${d.color.getHexString()}`;
+                        let color = d.color; //THREE.Color
+                        //could be switch but only 2..
+                        if (type == "supervisor") {
+                            let offset = cfg.supervisorOffset;
+                            color = offsetColor(color, offset);
+                        } else if (type == "port") {
+                            let offset = cfg.portOffset;
+                            color = offsetColor(color, offset);
+                        }
+                        //console.log(`#${color.getHexString()}`);
+                        return `shader: standard; color: #${color.getHexString()};`;
+                    })
+                    //.on('click', function (d, i) {
+                    //    console.log('clicked graph node');
+                    //    console.log(this.__data__, d);
+                        //NO ON CLICK.. -> DELETE IG LOL
+                        //set menubutton component with nodeInfo callback
+                        //data can be accessed through event.target
+                    //})
+                    .attr('menu-button', function (d, i) {
+                        return 'name: nodeInfo; offset: 0.1';
                     })
                     // add node information text
                     .each(function (d, i) {
                         console.log('b')
-                        //cant be entity.. selectAll entity error
+                        //cant be entity.. selectAll entity error, maybe change to select by class..
                         let name = document.createElement('a-plane');
                         name.setAttribute('material', 'transparent: true; opacity: 0');
                         name.setAttribute('geometry', 'primitive: plane; width: 2; height: auto');
@@ -195,7 +219,7 @@ export default class {
         //     for (let i = 0; i < nodeList.length; i++) {
         //         const data = nodeList[i].__data__;
         //         const dist = Math.sqrt((data.x - camPos.x)^2 + (data.y - camPos.y)^2);
-       
+
         //     }
 
         links.join(
@@ -204,7 +228,9 @@ export default class {
                     .append('a-entity')
                     .merge(links)
                     .attr('line', function (d, i) {
-                        return `start: ${d.source.x} 0 ${d.source.y}; end: ${d.target.x} 0 ${d.target.y}; color: green`;
+                        let color = new THREE.Color(cfg.linkColor);
+                        color = `#${color.getHexString()}`;
+                        return `start: ${d.source.x} 0 ${d.source.y}; end: ${d.target.x} 0 ${d.target.y}; color: ${color}`;
                     })
             }
         );
@@ -217,15 +243,15 @@ export default class {
 
 
 
-
+        this.testFunc();
 
         if (force_restart)
             this.forceSim.alpha(1).restart();
     }
 
-    
-// kinda shit position.. idk
-    test = setInterval(() => {
+
+    // kinda shit.. idk
+    testFunc = () => {
         let rig = document.querySelector('#cameraRig');
         let camPos = rig.object3D.position;
         let nodeList = this.processes._groups[0];
@@ -234,18 +260,27 @@ export default class {
             if (node) {
                 let d = node.__data__;
                 // +5 to compensate for relative position of graph, can probably get world pos
-                let dist = Math.sqrt(((d.x+5) - camPos.x) ** 2 + ((d.y+5) - camPos.z) ** 2);
+                let dist = Math.sqrt(((d.x + 5) - camPos.x) ** 2 + ((d.y + 5) - camPos.z) ** 2);
                 // console.log(d.x, d.y, camPos.x, camPos.z, dist)
 
-               // let line = document.querySelector('#LINETEST');
+                // let line = document.querySelector('#LINETEST');
                 // line.setAttribute('line', `start: ${d.x} 0 ${d.y}; end: ${camPos.x} 0 ${camPos.z}; color: green`)
 
+                let text = node.firstChild;
+                //add showAllNodes boolean controlled by menu button idk..
                 if (dist < 3) {
-                    console.log(d);
-                    node.setAttribute('material', 'color: green')
-                };
+                    // console.log(node);
+                    text.setAttribute('visible', true);
+                    //add user height to position
+                    let v = new THREE.Vector3(camPos.x, camPos.y + 1.6, camPos.z);
+                    text.object3D.lookAt(v);
+                    //node.setAttribute('material', 'color: green')
+                } else {
+                    text.setAttribute('visible', false);
+                    //node.setAttribute('material', 'color: red')
+                }
             }
             //console.log(camPos.x ) 
         }
-    }, 1000)
+    }
 }

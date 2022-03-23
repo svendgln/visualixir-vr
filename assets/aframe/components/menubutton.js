@@ -1,5 +1,7 @@
+import { offsetColor } from "../util";
+
 console.log('MENU BUTTON LOADED');
-// move to file
+// move to file + rename to nodeSelect maybe idk
 function nodeClick(target, args) {
     let nodeName = args[0]
     console.log('clicked on', nodeName);
@@ -8,13 +10,30 @@ function nodeClick(target, args) {
     if ($(target).hasClass('selected')) {
         $(target).removeClass('selected');
         target.setAttribute('text', 'color: white');
-        window.app.menu.cleanupNode(nodeName);
+        window.app.menuController.nodeMenu.cleanupNode(nodeName);
         //target.flushToDOM();
     } else {
         $(target).addClass('selected');
         target.setAttribute('text', 'color: green');
-        window.app.menu.visualizeNode(nodeName);
+        window.app.menuController.nodeMenu.visualizeNode(nodeName);
         //target.flushToDOM();
+    }
+}
+
+//move to file
+function nodeInfo(target, args) {
+    const data = target.__data__;
+    console.log('Node Info Command: ', data);
+    window.app.menuController.nodeInfo.displayNodeInfo(data);
+}
+
+function collapseNode(target, args) {
+    const pid = args[0];
+    console.log('collapse',pid);
+    if (pid) {
+        window.app.clusterView.collapseNode(pid);
+    } else {
+        console.log('no active node or node disconnected');
     }
 }
 
@@ -27,9 +46,12 @@ AFRAME.registerSystem('menu-button', {
             console.log('custom callback on', target, 'with args: ', args);
             document.test();
         }
+        //temp
         this.addCommand('testRemove', document.test2);
         this.addCommand('test', test);
         this.addCommand('nodeClick', nodeClick);
+        this.addCommand('nodeInfo', nodeInfo);
+        this.addCommand('collapseNode', collapseNode);
         this.listCommands();
     },
 
@@ -53,19 +75,21 @@ AFRAME.registerSystem('menu-button', {
         if (func) {
             func(target, args);
         } else {
-            console.log('invalid button callback on button ', target, 'with args: ', args);
+            console.log('invalid button callback on button', name, 'with args:', args);
         }
     }
 })
 
+//NEEDS TO BE RENAMED TO.. idk just button / custom-button
 AFRAME.registerComponent('menu-button', {
     /**
      * schema: color and text, idk what else
      */
     schema: {
-        color: { type: 'color', default: '#FF0000' },
-        name: { type: 'string' },
-        args: { type: 'array', default: [] }
+        offset: { type: 'number', default: 0.5 },
+        name: { type: 'string', default: '' },
+        args: { type: 'array', default: [] },
+        clickable: { type: 'boolean', default: true } //why lol
     },
 
     init: function () {
@@ -73,32 +97,50 @@ AFRAME.registerComponent('menu-button', {
         document.el = el;
         //system should be accessible through this.system?..
         const system = this.el.sceneEl.systems['menu-button'];
-        console.log('ID: ', this.id, this.system);
+        //console.log('ID: ', this.id, this.system);
         //console.log('test: ', makeButton('#00FF00'));
 
         const color = el.components.material.material.color;
-        const { r, g, b } = color;
-        const highlightColor = new THREE.Color(r, g, b);
-        highlightColor.offsetHSL(0.5, 0, 0);
+        //const { r, g, b } = color;
+        //const highlightColor = new THREE.Color(r, g, b);
+        //highlightColor.offsetHSL(0.5, 0, 0);
 
         const colorHex = `#${color.getHexString()}`;
-        const highlightHex = `#${highlightColor.getHexString()}`;
+        const highlightHex = `#${offsetColor(color, this.data.offset).getHexString()}`;
 
-        console.log(colorHex);
+        //console.log(colorHex);
 
-        el.setAttribute('animation__mouseenter', "property: components.material.material.color; type: color; to: " + highlightHex + "; startEvents: mouseenter; dur: 50");
-        el.setAttribute('animation__mouseleave', "property: components.material.material.color; type: color; to: " + colorHex + "; startEvents: mouseleave; dur: 50");
-        el.setAttribute('animation__click', "property: scale; from: 1 1 1; to: 1.1 1.1 1.1; startEvents: click; dur: 200; dir: alternate");
-        el.setAttribute('animation__click2', "property: scale; from: 1.1 1.1 1.1; to: 1 1 1; startEvents: click; dur: 200; delay: 200");
 
-        el.addEventListener('click', evt => {
-            console.log(evt);
-            // evt.target for clicked el
-            console.log('SYSTEM: ', system);
-            let target = evt.target;
-            system.run(this.data.name, target, this.data.args);
-        });
+        if (this.data.clickable) {
+            //prevent clicking on children to trigger events/animations
+            this.el.childNodes.forEach(node => {
+                node.addEventListener('mouseenter', evt => {
+                    //console.log('HELP');
+                    //evt.preventDefault();
+                    evt.stopPropagation();
+                });
+                node.addEventListener('click', evt => {
+                    //console.log('no click lolol');
+                    evt.stopPropagation();
+                });
+            });
 
+            el.setAttribute('raycastable', '');
+
+            //only when clickable? -> unclickable buttons possible..
+            el.setAttribute('animation__mouseenter', "property: components.material.material.color; type: color; to: " + highlightHex + "; startEvents: mouseenter; dur: 50");
+            el.setAttribute('animation__mouseleave', "property: components.material.material.color; type: color; to: " + colorHex + "; startEvents: mouseleave; dur: 50");
+            el.setAttribute('animation__click', "property: scale; from: 1 1 1; to: 1.1 1.1 1.1; startEvents: click; dur: 200; dir: alternate");
+            el.setAttribute('animation__click2', "property: scale; from: 1.1 1.1 1.1; to: 1 1 1; startEvents: click; dur: 200; delay: 200");
+
+            el.addEventListener('click', evt => {
+                console.log(evt);
+                // evt.target for clicked el
+                //console.log('SYSTEM: ', system);
+                let target = evt.target;
+                system.run(this.data.name, target, this.data.args);
+            });
+        }
         // test
         // let geometry = el.getObject3D('mesh').geometry;
         // console.log('geometry: ', geometry);
@@ -108,6 +150,11 @@ AFRAME.registerComponent('menu-button', {
         //     color: 0xffffff
         // }));
 
+    },
+
+    update: function (oldData) {
+        console.log(oldData);
+        console.log(this.data);
     }
 });
 

@@ -12,10 +12,11 @@ import "phoenix_html";
 import socket from "./user_socket.js";
 import Menu from "./components/menu.js";
 import ClusterView from "./cluster_view.js";
+import menuController from "./menuController.js";
 
 //window.socket.channel("nodes", {}).join().receive("ok", () => console.log('FRFRFRF'));
 // temp fix
-const components = ['clicktest.js', 'customcontrols.js', 'debug.js', 'enterleave.js', 'menubutton.js', 'menu.js', 'camrender.js']
+const components = ['clicktest.js', 'customcontrols.js', 'debug.js', 'enterleave.js', 'menubutton.js', 'menu.js', 'camrender.js', 'nodeinfo.js']
 components.forEach(c => {
     console.log('importing ', c);
     require(`./components/${c}`);
@@ -24,13 +25,22 @@ components.forEach(c => {
 class AframeApp {
     constructor() {
         //this.menu = new Menu();
-        this.cluster_view = new ClusterView('NOT USED');
+        this.clusterView = new ClusterView('NOT USED');
+        //this.menu = new Menu();
+        this.menuController = new menuController();
     }
 }
 // on document load
-$(() => {
+// $(() => {
+//     window.socket = socket;
+//     console.log('SOCKET LOADED')
+//     window.app = new AframeApp();
+// })
+
+(() => {
     window.socket = socket;
+    console.log('SOCKET LOADED')
     window.app = new AframeApp();
-})
+})()
 //import './test.js';
 

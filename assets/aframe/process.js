@@ -10,6 +10,8 @@ export default class {
     this.application = info.application;
     this.type = info.type;
     this.msg_traced = info.msg_traced;
+    //
+    this.color = info.color;
 
     if (this.isGroupingProcess()) {
       this.invisible_links = {};

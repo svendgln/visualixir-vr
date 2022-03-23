@@ -1,24 +1,31 @@
+import cfg from '../config';
+import { offsetColor } from '../util';
 
 AFRAME.registerComponent('menu', {
+    dependencies: ['geometry'],
     init: function () {
         console.log('menu init');
         //let t = new Menu();
-        window.app.menu = new Menu();
+        window.app.menuController.nodeMenu = new Menu();
+        //load menuController here? idk consistency
 
         document.querySelector('a-scene').addEventListener('enter-vr', function () {
             console.log("ENTERED VR");
+            window.app.menuController.initVR()
             // attach menu to controller
 
-            let entity = document.querySelector('#menu');
-            let newParent = document.querySelector('#controllerRight');
-            //entity.flushToDOM(); //not needed? dafuq
-            let copy = entity.cloneNode(true);
-            newParent.appendChild(copy);
-            entity.parentNode.removeChild(entity);
-            //resize
-            copy.setAttribute('scale', '0.5 0.5 0.5');
-            copy.setAttribute('rotation', '-30 0 0');
-            copy.setAttribute('position', '0 0.2 -0.2');
+            // moved to menuController
+
+            // let entity = document.querySelector('#menu');
+            // let newParent = document.querySelector('#controllerRight');
+            // //entity.flushToDOM(); //not needed? dafuq
+            // let copy = entity.cloneNode(true);
+            // newParent.appendChild(copy);
+            // entity.parentNode.removeChild(entity);
+            // //resize
+            // copy.setAttribute('scale', '0.5 0.5 0.5');
+            // copy.setAttribute('rotation', '-30 0 0');
+            // copy.setAttribute('position', '0 0.2 -0.2');
         });
 
 
@@ -33,23 +40,25 @@ export default class Menu {
         //TODO: scroll button when #nodes > max
         this.nodesContainer = document.querySelector('a-scene #menu-nodes');
         console.log('CONTAINER: ', this.nodesContainer);
+        console.log(window.socket)
         console.log(this.nodesContainer.getAttribute('geometry'));
         this.containerHeight = this.nodesContainer.getAttribute('geometry').height;
         this.containerWidth = this.nodesContainer.getAttribute('geometry').width;
         this.channel = window.socket.channel("nodes", {});
-        this.nodes = [];
+        this.nodeColors = new Map();
         this.nodeListSize = 3; //max visible nodes in the menu list at once
         this.nodePadding = 0.05; //test
         this.nodeWidth = this.containerWidth - this.nodePadding;
-        this.nodeHeight = 0.1;
+        this.nodeHeight = 0.2;
         this.maxNodes = Math.floor(this.containerHeight / (this.nodeHeight + this.nodePadding));
         console.log(
             'container height: ', this.containerHeight,
             '\nnode height+padding: ', this.nodeHeight + this.nodePadding,
-            'max #nodes -> ', this.maxNodes
+            '\nmax #nodes -> ', this.maxNodes
         )
 
         let updateNodes = msg => {
+            //update this.nodes here idk, for scroll shit.. eventually..
             this.update(msg.nodes);
         };
 
@@ -61,7 +70,7 @@ export default class Menu {
     update(nodes) {
         console.log('updating nodes: ', nodes);
         const l = nodes.length;
-
+        const self = this;
 
         //d3
         d3.select('a-scene').select('#menu-nodes')
@@ -81,14 +90,19 @@ export default class Menu {
                 return 'shader: flat; color: red'
             })
             .attr('text', (d, i) => {
+                //??split node string at @ idk
                 return `value: ${d}; align: center; wrapCount: 20`
             })
-            .attr('menu-button', (d, i) => `name: nodeClick; args: ${d}`)
-            .attr('raycastable', (d, i) => '')
+            .attr('menu-button', (d, i) => `name: nodeClick; args: ${d}; clickable: true`)
+            //.attr('raycastable', (d, i) => '')
             .each(function (d, i) {
-                //update DOM with correct attribute values
+                self.nodeColors.set(d, cfg.COLORS[i % cfg.COLORS.length]);
+                self.appendColorLegend(this, d);
+                // update DOM with correct attribute values
+                // needed?
                 this.flushToDOM();
                 console.log('flushed: ', this);
+                console.log(d);
             });
     }
 
@@ -100,9 +114,36 @@ export default class Menu {
     cleanupNode(node) {
         console.log('cleanup callback')
     }
+
+    appendColorLegend(node, key) {
+        console.log(node)
+        let radius = (this.nodeHeight / 3) / 2; //3 node types
+        let offsetY = this.nodeHeight / 2;
+        let offsetX = (this.nodeWidth / 2) + radius;
+
+        let baseColor = new THREE.Color(this.nodeColors.get(key));
+        let values = {
+            process: baseColor,
+            supervisor: offsetColor(baseColor, cfg.supervisorOffset),
+            port: offsetColor(baseColor, cfg.portOffset)
+        }
+        Object.entries(values).forEach(([key, color], i) => {
+            console.log('ADDED legend button', key);
+            let el = document.createElement('a-entity');
+            el.setAttribute('position', `${offsetX + this.nodePadding} ${offsetY - radius -(i*radius*2)} 0.01`);
+            el.setAttribute('geometry', `primitive: cylinder; height: 0.01; radius: ${radius}`);
+            el.setAttribute('material', `shader: flat; color: #${color.getHexString()}`); //probs change
+            el.setAttribute('rotation', '90 0 0');
+            //text
+            let t = document.createElement('a-entity');
+            //t.setAttribute('geometry', 'primitive: plane; width: auto; height: auto');
+            //t.setAttribute('material', 'transparent: true; opacity: 0');
+            t.setAttribute('text', `wrapCount: 20; value: ${key}; align: left; color: blue; anchor: left; opacity: 1; width: ${this.containerWidth - radius}`);
+            t.setAttribute('position', `${radius} -0.02 0`);
+            t.setAttribute('rotation', '-90 0 0');
+            el.appendChild(t);
+
+            node.appendChild(el);
+        })
+    }
 }
-// temp :p
-// create instance in aframeApp..
-//let t = new Menu("aa");
-//moved to menu component init
-//t.update("a");

@@ -17,6 +17,11 @@
         <a-assets>
             <img id="boxTexture" src="https://i.imgur.com/mYmmbrp.jpg">
             <canvas id="cam2"></canvas>
+            <%# <a-mixin id="color-legend" 
+                geometry="primitive: cylinder; height: 0.01"
+                material="shader: flat; transparent: true; opacity: 0.5"
+                rotation="90 0 0">
+            </a-mixin> %>
         </a-assets>
 
         <!-- axis visualisation.. testing.. -->
@@ -41,39 +46,43 @@
 
         <!-- camera rig -->
         <a-entity id="cameraRig" movement-controls="fly: true" position="0 0 0" rotation="0 0 0" custom-controls testing>
-            <a-entity id="camera" camera position="0 1.6 0" look-controls>
-                
-            </a-entity>
+            <a-entity id="camera" camera position="0 1.6 0" look-controls></a-entity>
             <a-entity cursor="rayOrigin:mouse"></a-entity>
             <a-entity id="controllerLeft" laser-controls="hand: left"
-                raycaster="lineColor: red; lineOpacity: 0.5; objects: [raycastable]"></a-entity>
+                raycaster="lineColor: red; lineOpacity: 0.5; objects: [raycastable]">
+            </a-entity>
             <a-entity id="controllerRight" laser-controls="hand: right"
-                raycaster="lineColor: blue; lineOpacity: 0.5; objects: [raycastable]">
-                
-                <%# <a-box color="red" position="0 0 0"></a-box> %>
-                </a-entity>
+                raycaster="lineColor: blue; lineOpacity: 0.5; objects: [raycastable]">                
+            </a-entity>
         </a-entity>
 
         <!-- menu: add to ui in non vr, attach to controller in vr?.. -->
         <!-- someEl.sceneEl.is('vr-mode') to check.. -->
         <a-entity id="menu" menu geometry="primitive: plane; height: 1; width: 1" visible="true"
-            material="shader: flat; color: #ff5733; transparent: true; opacity: 0.5; side: double">
+            material="shader: flat; color: #ff5733; transparent: true; opacity: 0.5; side: double"
+            position="0 1.5 0">
 
             <a-entity id="menu-nodes" geometry="primitive: plane; height: 0.9; width: 0.45"
                 material="shader: flat; color: #ff0000; side: double; transparent: true; opacity: 0.5"
-                position="-0.225 0 0.01" raycastable></a-entity>
-        <!-- TEST BUTTONS -->
-            <a-entity id="testbutton" geometry="primitive: cylinder; height: 0.05; radius: 0.05"
+                position="-0.225 0 0.01" raycastable>
+            </a-entity>
+            <!-- color legend -->
+            <%# <a-entity id="process"    mixin="color-legend"></a-entity>
+            <a-entity id="supervisor" mixin="color-legend"></a-entity>
+            <a-entity id="port"       mixin="color-legend"></a-entity> %>
+
+        <!-- TEST BUTTONS: use mixin?? , use on different tab.. -->
+            <%# <a-entity id="testbutton" geometry="primitive: cylinder; height: 0.05; radius: 0.05"
                 material="shader: flat; color: #FF0000; transparent: true; opacity: 0.5" rotation="90 0 0"
-                position="0.1 0.3 0" menu-button="name: test; args: 1, 2, 3" raycastable>
+                position="0.1 -0.3 0" menu-button="name: test; args: 1, 2, 3; clickable: true">
 
                 <a-text value="test button" rotation="-90 0 0" side="double" scale="0.3 0.3 0.3" position="0.08 0 0">
                 </a-text>
             </a-entity>
             <a-entity id="testbutton2" geometry="primitive: cylinder; height: 0.05; radius: 0.05"
             material="shader: flat; color: #00FF00; transparent: true; opacity: 0.5" rotation="90 0 0"
-            position="0.1 0.2 0" menu-button="name: testRemove;" raycastable>
-            </a-entity>
+            position="0.1 -0.2 0" menu-button="name: testRemove; clickable: true">
+            </a-entity> %>
         <!-- TEST BUTTONS -->
 
         </a-entity>
@@ -87,13 +96,33 @@
             <a-entity id="d3-invisible-links" position="0 0 0"></a-entity>
         </a-entity>
 
-        <!-- overview cam -->
+        <!-- overview cam tab -->
         <a-entity camera="active: false" camrender="cid: cam2; width: 500; height: 500"
             position="5 15 5" rotation="-90 -90 0">
         </a-entity>
-        <a-plane id="cam2" canvas-updater visible="true" position="-4 2 0" rotation="0 20 0" width="0.5" height="0.5"
+        <a-plane id="cam2" canvas-updater visible="true" position="-4 2 0" rotation="0 20 0" width="1" height="1"
             material="src:#cam2; opacity: .95">
         </a-plane>
+
+        <!-- node info tab -->
+        <!-- pid, name, node, application, type.. idk.. collapse button or some shit -->
+        <a-entity id="node-info" node-info
+            geometry="primitive: plane; height: 1; width: 1"
+            position="1 1.5 0"
+            material="color: gray; opacity: 0.5; shader: flat; side: double">
+
+            <a-text id="node-info-title" width="1" wrapCount="20" position="0 0.4 0"   align="center"  value="Node Info: no node selected"></a-text>
+            <a-text id="node-info-node"  width="1" wrapCount="20" position="-0.4 0.25 0"  align="left" value="Node: "></a-text>
+            <a-text id="node-info-appl"  width="1" wrapCount="20" position="-0.4 0.15 0"  align="left" value="Application: "></a-text>
+            <a-text id="node-info-type"  width="1" wrapCount="20" position="-0.4 0.05 0"  align="left" value="Type: "></a-text>
+            <a-text id="node-info-links" width="1" wrapCount="20" position="-0.4 -0.05 0" align="left" value="#Links: "></a-text>
+
+            <a-entity id="btn-collapse" geometry="primitive: cylinder; height: 0.05; radius: 0.05"
+                material="shader: flat; opacity: 0.5; color: #0beef0" rotation="90 0 0"
+                position="-0.4 -0.4 0" menu-button="name: collapseNode">
+                <a-text value="collapse node" wrapCount="20" position="0.1 0 0" rotation="-90 0 0" width="1"></a-text>
+            </a-entity>
+        </a-entity>
 
     </a-scene>
 </body>

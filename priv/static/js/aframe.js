@@ -159,6 +159,8 @@ var _menu = _interopRequireDefault(require("./components/menu.js"));
 
 var _cluster_view = _interopRequireDefault(require("./cluster_view.js"));
 
+var _menuController = _interopRequireDefault(require("./menuController.js"));
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
 
 function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
@@ -176,7 +178,7 @@ console.log("loading aframe app"); // const fs = require('fs');
 
 //window.socket.channel("nodes", {}).join().receive("ok", () => console.log('FRFRFRF'));
 // temp fix
-var components = ['clicktest.js', 'customcontrols.js', 'debug.js', 'enterleave.js', 'menubutton.js', 'menu.js', 'camrender.js'];
+var components = ['clicktest.js', 'customcontrols.js', 'debug.js', 'enterleave.js', 'menubutton.js', 'menu.js', 'camrender.js', 'nodeinfo.js'];
 components.forEach(function (c) {
   console.log('importing ', c);
 
@@ -187,14 +189,22 @@ var AframeApp = /*#__PURE__*/_createClass(function AframeApp() {
   _classCallCheck(this, AframeApp);
 
   //this.menu = new Menu();
-  this.cluster_view = new _cluster_view["default"]('NOT USED');
+  this.clusterView = new _cluster_view["default"]('NOT USED'); //this.menu = new Menu();
+
+  this.menuController = new _menuController["default"]();
 }); // on document load
+// $(() => {
+//     window.socket = socket;
+//     console.log('SOCKET LOADED')
+//     window.app = new AframeApp();
+// })
 
 
-$(function () {
+(function () {
   window.socket = _user_socket["default"];
+  console.log('SOCKET LOADED');
   window.app = new AframeApp();
-}); //import './test.js';
+})(); //import './test.js';
 });
 
 require.register("aframe/cluster_view.js", function(exports, require, module) {
@@ -208,6 +218,10 @@ exports["default"] = void 0;
 var _graph = _interopRequireDefault(require("./graph.js"));
 
 var _process = _interopRequireDefault(require("./process.js"));
+
+var _util = require("./util.js");
+
+var _config = _interopRequireDefault(require("./config"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
 
@@ -224,8 +238,11 @@ var _default = /*#__PURE__*/function () {
     _classCallCheck(this, _default);
 
     console.log('CLUSTER CLASS loaded');
+    console.log('CFG', _config["default"]);
+    console.log(_config["default"].linkColor);
     this.processes = {};
-    this.grouping_processes = {};
+    this.grouping_processes = {}; //this.nodes = 0; //active nodes, used to assign each a different color
+
     this.graph = new _graph["default"](graph_container, this);
     this.channel = window.socket.channel('trace', {});
     this.channel.join();
@@ -242,7 +259,8 @@ var _default = /*#__PURE__*/function () {
       console.log('VISUALIZEEEE ', msg);
       $.each(msg.pids, function (pid, info) {
         return _this2.addProcess(pid, info);
-      });
+      }); //this.nodes++;
+
       this.graph.update(true);
     }
   }, {
@@ -251,11 +269,15 @@ var _default = /*#__PURE__*/function () {
       var _this3 = this;
 
       if (this.processes[pid]) return; //exists
+      //let color = cfg.COLORS[this.nodes % cfg.COLORS.length];
 
+      var color = window.app.menuController.nodeMenu.nodeColors.get(info.node);
+      info.color = new THREE.Color(color);
       var process = this.processes[pid] = new _process["default"](pid, info); // 1 grouping process per node
 
       if (process.isGroupingProcess()) {
-        this.grouping_processes[process.node] = process; // since this is the first time the grouping process has been seen, go through all processes and create invisble links
+        this.grouping_processes[process.node] = process;
+        console.log(process); // since this is the first time the grouping process has been seen, go through all processes and create invisble links
 
         d3.values(this.processes).forEach(function (maybe_unlinked_process) {
           if (!maybe_unlinked_process.isGroupingProcess()) {
@@ -295,6 +317,11 @@ var _default = /*#__PURE__*/function () {
         to.links[from.id] = from;
         this.graph.addLink(from, to); //TODO
       }
+    }
+  }, {
+    key: "collapseNode",
+    value: function collapseNode(pid) {
+      console.log('nothing yet');
     }
   }]);
 
@@ -434,6 +461,11 @@ AFRAME.registerComponent('custom-controls', {
 
     controllerLeft.addEventListener('triggerdown', function (evt) {
       console.log('LEFT TRIGGER');
+      console.log(evt); // could differentiate between left/right controller..
+      // for now just using click event..
+      //
+      // on click check intersection
+      // fire left/right click event on intersected el..?
     });
     controllerRight.addEventListener('triggerdown', function (evt) {
       console.log('RIGHT TRIGGER');
@@ -452,6 +484,7 @@ AFRAME.registerComponent('custom-controls', {
     });
     controllerRight.addEventListener('menudown', function (evt) {
       console.log('RIGHT MENU'); // call this.somefunction toggle menu idk
+      //get active tab id, cycle to next on side grip etc
 
       var m = document.querySelector('#menu');
       m.setAttribute('visible', !m.getAttribute('visible'));
@@ -463,6 +496,7 @@ AFRAME.registerComponent('custom-controls', {
       var axis = evt.detail.axis;
       _this.axis = axis;
     }); // right trackpad: use click and axis location to create arrow key functionality?.. for.. something..
+    // can be different depending on active menu tab
   },
   tick: function tick(time, timeDelta) {
     var vecX = this.vecX;
@@ -566,6 +600,24 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports["default"] = void 0;
 
+var _config = _interopRequireDefault(require("../config"));
+
+var _util = require("../util");
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
+
+function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _unsupportedIterableToArray(arr, i) || _nonIterableRest(); }
+
+function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+
+function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
+
+function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) { arr2[i] = arr[i]; } return arr2; }
+
+function _iterableToArrayLimit(arr, i) { var _i = arr == null ? null : typeof Symbol !== "undefined" && arr[Symbol.iterator] || arr["@@iterator"]; if (_i == null) return; var _arr = []; var _n = true; var _d = false; var _s, _e; try { for (_i = _i.call(arr); !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"] != null) _i["return"](); } finally { if (_d) throw _e; } } return _arr; }
+
+function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
+
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
@@ -573,23 +625,26 @@ function _defineProperties(target, props) { for (var i = 0; i < props.length; i+
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
 
 AFRAME.registerComponent('menu', {
+  dependencies: ['geometry'],
   init: function init() {
     console.log('menu init'); //let t = new Menu();
 
-    window.app.menu = new Menu();
+    window.app.menuController.nodeMenu = new Menu(); //load menuController here? idk consistency
+
     document.querySelector('a-scene').addEventListener('enter-vr', function () {
-      console.log("ENTERED VR"); // attach menu to controller
-
-      var entity = document.querySelector('#menu');
-      var newParent = document.querySelector('#controllerRight'); //entity.flushToDOM(); //not needed? dafuq
-
-      var copy = entity.cloneNode(true);
-      newParent.appendChild(copy);
-      entity.parentNode.removeChild(entity); //resize
-
-      copy.setAttribute('scale', '0.5 0.5 0.5');
-      copy.setAttribute('rotation', '-30 0 0');
-      copy.setAttribute('position', '0 0.2 -0.2');
+      console.log("ENTERED VR");
+      window.app.menuController.initVR(); // attach menu to controller
+      // moved to menuController
+      // let entity = document.querySelector('#menu');
+      // let newParent = document.querySelector('#controllerRight');
+      // //entity.flushToDOM(); //not needed? dafuq
+      // let copy = entity.cloneNode(true);
+      // newParent.appendChild(copy);
+      // entity.parentNode.removeChild(entity);
+      // //resize
+      // copy.setAttribute('scale', '0.5 0.5 0.5');
+      // copy.setAttribute('rotation', '-30 0 0');
+      // copy.setAttribute('position', '0 0.2 -0.2');
     });
   }
 });
@@ -604,21 +659,23 @@ var Menu = /*#__PURE__*/function () {
 
     this.nodesContainer = document.querySelector('a-scene #menu-nodes');
     console.log('CONTAINER: ', this.nodesContainer);
+    console.log(window.socket);
     console.log(this.nodesContainer.getAttribute('geometry'));
     this.containerHeight = this.nodesContainer.getAttribute('geometry').height;
     this.containerWidth = this.nodesContainer.getAttribute('geometry').width;
     this.channel = window.socket.channel("nodes", {});
-    this.nodes = [];
+    this.nodeColors = new Map();
     this.nodeListSize = 3; //max visible nodes in the menu list at once
 
     this.nodePadding = 0.05; //test
 
     this.nodeWidth = this.containerWidth - this.nodePadding;
-    this.nodeHeight = 0.1;
+    this.nodeHeight = 0.2;
     this.maxNodes = Math.floor(this.containerHeight / (this.nodeHeight + this.nodePadding));
-    console.log('container height: ', this.containerHeight, '\nnode height+padding: ', this.nodeHeight + this.nodePadding, 'max #nodes -> ', this.maxNodes);
+    console.log('container height: ', this.containerHeight, '\nnode height+padding: ', this.nodeHeight + this.nodePadding, '\nmax #nodes -> ', this.maxNodes);
 
     var updateNodes = function updateNodes(msg) {
+      //update this.nodes here idk, for scroll shit.. eventually..
       _this.update(msg.nodes);
     };
 
@@ -633,7 +690,8 @@ var Menu = /*#__PURE__*/function () {
       var _this2 = this;
 
       console.log('updating nodes: ', nodes);
-      var l = nodes.length; //d3
+      var l = nodes.length;
+      var self = this; //d3
 
       d3.select('a-scene').select('#menu-nodes').selectAll('a-entity').data(nodes).join('a-entity').attr('geometry', function (d, i) {
         return "primitive: plane; width: ".concat(_this2.nodeWidth, "; height: ").concat(_this2.nodeHeight, ";");
@@ -645,15 +703,19 @@ var Menu = /*#__PURE__*/function () {
       }).attr('material', function (d, i) {
         return 'shader: flat; color: red';
       }).attr('text', function (d, i) {
+        //??split node string at @ idk
         return "value: ".concat(d, "; align: center; wrapCount: 20");
       }).attr('menu-button', function (d, i) {
-        return "name: nodeClick; args: ".concat(d);
-      }).attr('raycastable', function (d, i) {
-        return '';
-      }).each(function (d, i) {
-        //update DOM with correct attribute values
+        return "name: nodeClick; args: ".concat(d, "; clickable: true");
+      }) //.attr('raycastable', (d, i) => '')
+      .each(function (d, i) {
+        self.nodeColors.set(d, _config["default"].COLORS[i % _config["default"].COLORS.length]);
+        self.appendColorLegend(this, d); // update DOM with correct attribute values
+        // needed?
+
         this.flushToDOM();
         console.log('flushed: ', this);
+        console.log(d);
       });
     }
   }, {
@@ -667,21 +729,57 @@ var Menu = /*#__PURE__*/function () {
     value: function cleanupNode(node) {
       console.log('cleanup callback');
     }
+  }, {
+    key: "appendColorLegend",
+    value: function appendColorLegend(node, key) {
+      var _this3 = this;
+
+      console.log(node);
+      var radius = this.nodeHeight / 3 / 2; //3 node types
+
+      var offsetY = this.nodeHeight / 2;
+      var offsetX = this.nodeWidth / 2 + radius;
+      var baseColor = new THREE.Color(this.nodeColors.get(key));
+      var values = {
+        process: baseColor,
+        supervisor: (0, _util.offsetColor)(baseColor, _config["default"].supervisorOffset),
+        port: (0, _util.offsetColor)(baseColor, _config["default"].portOffset)
+      };
+      Object.entries(values).forEach(function (_ref, i) {
+        var _ref2 = _slicedToArray(_ref, 2),
+            key = _ref2[0],
+            color = _ref2[1];
+
+        console.log('ADDED legend button', key);
+        var el = document.createElement('a-entity');
+        el.setAttribute('position', "".concat(offsetX + _this3.nodePadding, " ").concat(offsetY - radius - i * radius * 2, " 0.01"));
+        el.setAttribute('geometry', "primitive: cylinder; height: 0.01; radius: ".concat(radius));
+        el.setAttribute('material', "shader: flat; color: #".concat(color.getHexString())); //probs change
+
+        el.setAttribute('rotation', '90 0 0'); //text
+
+        var t = document.createElement('a-entity'); //t.setAttribute('geometry', 'primitive: plane; width: auto; height: auto');
+        //t.setAttribute('material', 'transparent: true; opacity: 0');
+
+        t.setAttribute('text', "wrapCount: 20; value: ".concat(key, "; align: left; color: blue; anchor: left; opacity: 1; width: ").concat(_this3.containerWidth - radius));
+        t.setAttribute('position', "".concat(radius, " -0.02 0"));
+        t.setAttribute('rotation', '-90 0 0');
+        el.appendChild(t);
+        node.appendChild(el);
+      });
+    }
   }]);
 
   return Menu;
-}(); // temp :p
-// create instance in aframeApp..
-//let t = new Menu("aa");
-//moved to menu component init
-//t.update("a");
-
+}();
 
 exports["default"] = Menu;
 });
 
-require.register("aframe/components/menubutton.js", function(exports, require, module) {
+;require.register("aframe/components/menubutton.js", function(exports, require, module) {
 "use strict";
+
+var _util = require("../util");
 
 function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _unsupportedIterableToArray(arr, i) || _nonIterableRest(); }
 
@@ -697,7 +795,7 @@ function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o =
 
 function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) { arr2[i] = arr[i]; } return arr2; }
 
-console.log('MENU BUTTON LOADED'); // move to file
+console.log('MENU BUTTON LOADED'); // move to file + rename to nodeSelect maybe idk
 
 function nodeClick(target, args) {
   var nodeName = args[0];
@@ -708,11 +806,29 @@ function nodeClick(target, args) {
   if ($(target).hasClass('selected')) {
     $(target).removeClass('selected');
     target.setAttribute('text', 'color: white');
-    window.app.menu.cleanupNode(nodeName); //target.flushToDOM();
+    window.app.menuController.nodeMenu.cleanupNode(nodeName); //target.flushToDOM();
   } else {
     $(target).addClass('selected');
     target.setAttribute('text', 'color: green');
-    window.app.menu.visualizeNode(nodeName); //target.flushToDOM();
+    window.app.menuController.nodeMenu.visualizeNode(nodeName); //target.flushToDOM();
+  }
+} //move to file
+
+
+function nodeInfo(target, args) {
+  var data = target.__data__;
+  console.log('Node Info Command: ', data);
+  window.app.menuController.nodeInfo.displayNodeInfo(data);
+}
+
+function collapseNode(target, args) {
+  var pid = args[0];
+  console.log('collapse', pid);
+
+  if (pid) {
+    window.app.clusterView.collapseNode(pid);
+  } else {
+    console.log('no active node or node disconnected');
   }
 }
 
@@ -724,11 +840,14 @@ AFRAME.registerSystem('menu-button', {
     function test(target, args) {
       console.log('custom callback on', target, 'with args: ', args);
       document.test();
-    }
+    } //temp
+
 
     this.addCommand('testRemove', document.test2);
     this.addCommand('test', test);
     this.addCommand('nodeClick', nodeClick);
+    this.addCommand('nodeInfo', nodeInfo);
+    this.addCommand('collapseNode', collapseNode);
     this.listCommands();
   },
   addCommand: function addCommand(name, func) {
@@ -762,26 +881,33 @@ AFRAME.registerSystem('menu-button', {
     if (func) {
       func(target, args);
     } else {
-      console.log('invalid button callback on button ', target, 'with args: ', args);
+      console.log('invalid button callback on button', name, 'with args:', args);
     }
   }
-});
+}); //NEEDS TO BE RENAMED TO.. idk just button / custom-button
+
 AFRAME.registerComponent('menu-button', {
   /**
    * schema: color and text, idk what else
    */
   schema: {
-    color: {
-      type: 'color',
-      "default": '#FF0000'
+    offset: {
+      type: 'number',
+      "default": 0.5
     },
     name: {
-      type: 'string'
+      type: 'string',
+      "default": ''
     },
     args: {
       type: 'array',
       "default": []
-    }
+    },
+    clickable: {
+      type: 'boolean',
+      "default": true
+    } //why lol
+
   },
   init: function init() {
     var _this = this;
@@ -789,35 +915,54 @@ AFRAME.registerComponent('menu-button', {
     var el = this.el;
     document.el = el; //system should be accessible through this.system?..
 
-    var system = this.el.sceneEl.systems['menu-button'];
-    console.log('ID: ', this.id, this.system); //console.log('test: ', makeButton('#00FF00'));
+    var system = this.el.sceneEl.systems['menu-button']; //console.log('ID: ', this.id, this.system);
+    //console.log('test: ', makeButton('#00FF00'));
 
-    var color = el.components.material.material.color;
-    var r = color.r,
-        g = color.g,
-        b = color.b;
-    var highlightColor = new THREE.Color(r, g, b);
-    highlightColor.offsetHSL(0.5, 0, 0);
+    var color = el.components.material.material.color; //const { r, g, b } = color;
+    //const highlightColor = new THREE.Color(r, g, b);
+    //highlightColor.offsetHSL(0.5, 0, 0);
+
     var colorHex = "#".concat(color.getHexString());
-    var highlightHex = "#".concat(highlightColor.getHexString());
-    console.log(colorHex);
-    el.setAttribute('animation__mouseenter', "property: components.material.material.color; type: color; to: " + highlightHex + "; startEvents: mouseenter; dur: 50");
-    el.setAttribute('animation__mouseleave', "property: components.material.material.color; type: color; to: " + colorHex + "; startEvents: mouseleave; dur: 50");
-    el.setAttribute('animation__click', "property: scale; from: 1 1 1; to: 1.1 1.1 1.1; startEvents: click; dur: 200; dir: alternate");
-    el.setAttribute('animation__click2', "property: scale; from: 1.1 1.1 1.1; to: 1 1 1; startEvents: click; dur: 200; delay: 200");
-    el.addEventListener('click', function (evt) {
-      console.log(evt); // evt.target for clicked el
+    var highlightHex = "#".concat((0, _util.offsetColor)(color, this.data.offset).getHexString()); //console.log(colorHex);
 
-      console.log('SYSTEM: ', system);
-      var target = evt.target;
-      system.run(_this.data.name, target, _this.data.args);
-    }); // test
+    if (this.data.clickable) {
+      //prevent clicking on children to trigger events/animations
+      this.el.childNodes.forEach(function (node) {
+        node.addEventListener('mouseenter', function (evt) {
+          //console.log('HELP');
+          //evt.preventDefault();
+          evt.stopPropagation();
+        });
+        node.addEventListener('click', function (evt) {
+          //console.log('no click lolol');
+          evt.stopPropagation();
+        });
+      });
+      el.setAttribute('raycastable', ''); //only when clickable? -> unclickable buttons possible..
+
+      el.setAttribute('animation__mouseenter', "property: components.material.material.color; type: color; to: " + highlightHex + "; startEvents: mouseenter; dur: 50");
+      el.setAttribute('animation__mouseleave', "property: components.material.material.color; type: color; to: " + colorHex + "; startEvents: mouseleave; dur: 50");
+      el.setAttribute('animation__click', "property: scale; from: 1 1 1; to: 1.1 1.1 1.1; startEvents: click; dur: 200; dir: alternate");
+      el.setAttribute('animation__click2', "property: scale; from: 1.1 1.1 1.1; to: 1 1 1; startEvents: click; dur: 200; delay: 200");
+      el.addEventListener('click', function (evt) {
+        console.log(evt); // evt.target for clicked el
+        //console.log('SYSTEM: ', system);
+
+        var target = evt.target;
+        system.run(_this.data.name, target, _this.data.args);
+      });
+    } // test
     // let geometry = el.getObject3D('mesh').geometry;
     // console.log('geometry: ', geometry);
     // let edges = new THREE.EdgesGeometry(geometry);
     // let line = new THEE.lineSegments(edges, new THREE.LineBasicMaterial({
     //     color: 0xffffff
     // }));
+
+  },
+  update: function update(oldData) {
+    console.log(oldData);
+    console.log(this.data);
   }
 }); // function makeButton(color) {
 //     const colorRegex = /^#([0-9a-f]{3}){1,2}$/i;
@@ -837,6 +982,92 @@ AFRAME.registerComponent('menu-button', {
 // }
 });
 
+;require.register("aframe/components/nodeinfo.js", function(exports, require, module) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports["default"] = void 0;
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
+
+AFRAME.registerComponent('node-info', {
+  dependencies: ['geometry'],
+  //wait for object to load
+  init: function init() {
+    console.log('node menu init');
+    window.app.menuController.nodeInfo = new NodeInfo();
+  }
+});
+
+var NodeInfo = /*#__PURE__*/function () {
+  function NodeInfo() {
+    _classCallCheck(this, NodeInfo);
+
+    console.log('NODEINFO LOADED');
+    this.container = document.querySelector('a-scene #node-info');
+    this.activeID = false; //false or active node(process) idk
+
+    this.titleField = document.querySelector('#node-info-title');
+    this.nodeField = document.querySelector('#node-info-node');
+    this.applField = document.querySelector('#node-info-appl');
+    this.typeField = document.querySelector('#node-info-type');
+    this.linksField = document.querySelector('#node-info-links');
+    this.collapseBtn = document.querySelector('#btn-collapse');
+  }
+
+  _createClass(NodeInfo, [{
+    key: "displayNodeInfo",
+    value: function displayNodeInfo(info) {
+      //id = pid, used to collapse node..
+      //will need checks if pids can disconnect etc
+      console.log('displaying node info', info.id);
+      var application = info.application,
+          id = info.id,
+          links = info.links,
+          name = info.name,
+          node = info.node,
+          type = info.type;
+      var numLinks = Object.keys(links).length.toString();
+      this.titleField.setAttribute('value', "Node Info: ".concat(name));
+      this.nodeField.setAttribute('value', "Node: ".concat(node));
+      this.applField.setAttribute('value', "Application: ".concat(application));
+      this.typeField.setAttribute('value', "Type: ".concat(type));
+      this.linksField.setAttribute('value', "#Links: ".concat(numLinks)); // set collapse button callback
+
+      this.activeID = id;
+      this.collapseBtn.setAttribute('menu-button', "args: ".concat(id));
+    }
+  }]);
+
+  return NodeInfo;
+}();
+
+exports["default"] = NodeInfo;
+});
+
+;require.register("aframe/config.js", function(exports, require, module) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports["default"] = void 0;
+//json doesnt support hex values
+var _default = {
+  COLORS: [0x92b82a, 0xff0000, 0x00ff00, 0x0000ff],
+  supervisorOffset: 0.3,
+  portOffset: -0.3,
+  linkColor: 0x21a33b
+};
+exports["default"] = _default;
+});
+
 ;require.register("aframe/graph.js", function(exports, require, module) {
 "use strict";
 
@@ -846,6 +1077,10 @@ Object.defineProperty(exports, "__esModule", {
 exports["default"] = void 0;
 
 var _process = _interopRequireDefault(require("./process"));
+
+var _util = require("./util");
+
+var _config = _interopRequireDefault(require("./config"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
 
@@ -875,7 +1110,7 @@ var _default = /*#__PURE__*/function () {
 
     _classCallCheck(this, _default);
 
-    _defineProperty(this, "test", setInterval(function () {
+    _defineProperty(this, "testFunc", function () {
       var rig = document.querySelector('#cameraRig');
       var camPos = rig.object3D.position;
       var nodeList = _this.processes._groups[0];
@@ -890,16 +1125,21 @@ var _default = /*#__PURE__*/function () {
           // let line = document.querySelector('#LINETEST');
           // line.setAttribute('line', `start: ${d.x} 0 ${d.y}; end: ${camPos.x} 0 ${camPos.z}; color: green`)
 
-          if (dist < 3) {
-            console.log(d);
-            node.setAttribute('material', 'color: green');
-          }
+          var text = node.firstChild; //add showAllNodes boolean controlled by menu button idk..
 
-          ;
+          if (dist < 3) {
+            // console.log(node);
+            text.setAttribute('visible', true); //add user height to position
+
+            var v = new THREE.Vector3(camPos.x, camPos.y + 1.6, camPos.z);
+            text.object3D.lookAt(v); //node.setAttribute('material', 'color: green')
+          } else {
+            text.setAttribute('visible', false); //node.setAttribute('material', 'color: red')
+          }
         } //console.log(camPos.x ) 
 
       }
-    }, 1000));
+    });
 
     console.log('GRAPH loaded', container); //this.container = container;
 
@@ -923,6 +1163,11 @@ var _default = /*#__PURE__*/function () {
 
     this.cameraRig = document.querySelector('#cameraRig');
     this.processes = null;
+    setInterval(function () {
+      console.log('LOL');
+
+      _this.testFunc();
+    }, 1000);
   } // Links
 
 
@@ -985,8 +1230,8 @@ var _default = /*#__PURE__*/function () {
       this.forceSim.force('link').links(links_list);
       this.forceSim.force('invisiblelink').links(invisible_links_list); // update processes 
 
-      var testo = d3.values(this.cluster_view.grouping_processes);
-      var shit = d3.select('a-scene').select('#d3-test').selectAll('a-entity').data(testo, function (d) {
+      var grouping_pids_list = d3.values(this.cluster_view.grouping_processes);
+      var shit = d3.select('a-scene').select('#d3-test').selectAll('a-entity').data(grouping_pids_list, function (d) {
         return d.id;
       }); //rename lol
 
@@ -997,17 +1242,19 @@ var _default = /*#__PURE__*/function () {
         // })
         // .merge(shit)
         .append('a-entity') //.merge(shit)
-        .attr('geometry', function (d, i) {
-          //return 'primitive: sphere'
-          return 'primitive: plane; width: 20; height: auto;';
-        }).attr('position', function (d, i) {
+        // .attr('geometry', function (d, i) {
+        //     //return 'primitive: sphere'
+        //     return 'primitive: plane; width: 20; height: auto;';
+        // })
+        .attr('position', function (d, i) {
           //console.log(d);
           return "".concat(d.x, " 5 ").concat(d.y);
         }) //make bg transparent
-        .attr('material', function (d, i) {
-          return 'color: yellow; transparent: true; opacity: 0';
-        }).attr('text', function (d, i) {
-          return "wrapCount: 20; value: ".concat(d.node, "; align: center; color: blue");
+        // .attr('material', function (d, i) {
+        //     return 'color: yellow; transparent: true; opacity: 0'
+        // })
+        .attr('text', function (d, i) {
+          return "wrapCount: 20; value: ".concat(d.node, "; align: center; color: blue; side: double; width: 20");
         }); // .each(function(d, i) {
         //     this.flushToDOM()
         // })
@@ -1027,12 +1274,34 @@ var _default = /*#__PURE__*/function () {
           console.log('a');
           return "".concat(d.x, " 0 ").concat(d.y);
         }).attr('material', function (d, i) {
-          var color = 'red';
-          if (d.node == 'TEST@CORSAIR') color = 'green';
-          return "shader: standard; color: ".concat(color);
+          var type = d.type; //hex value to string
+          //let color = `#${d.color.getHexString()}`;
+
+          var color = d.color; //THREE.Color
+          //could be switch but only 2..
+
+          if (type == "supervisor") {
+            var offset = _config["default"].supervisorOffset;
+            color = (0, _util.offsetColor)(color, offset);
+          } else if (type == "port") {
+            var _offset = _config["default"].portOffset;
+            color = (0, _util.offsetColor)(color, _offset);
+          } //console.log(`#${color.getHexString()}`);
+
+
+          return "shader: standard; color: #".concat(color.getHexString(), ";");
+        }) //.on('click', function (d, i) {
+        //    console.log('clicked graph node');
+        //    console.log(this.__data__, d);
+        //NO ON CLICK.. -> DELETE IG LOL
+        //set menubutton component with nodeInfo callback
+        //data can be accessed through event.target
+        //})
+        .attr('menu-button', function (d, i) {
+          return 'name: nodeInfo; offset: 0.1';
         }) // add node information text
         .each(function (d, i) {
-          console.log('b'); //cant be entity.. selectAll entity error
+          console.log('b'); //cant be entity.. selectAll entity error, maybe change to select by class..
 
           var name = document.createElement('a-plane');
           name.setAttribute('material', 'transparent: true; opacity: 0');
@@ -1060,13 +1329,105 @@ var _default = /*#__PURE__*/function () {
 
       links.join(function (enter) {
         enter.append('a-entity').merge(links).attr('line', function (d, i) {
-          return "start: ".concat(d.source.x, " 0 ").concat(d.source.y, "; end: ").concat(d.target.x, " 0 ").concat(d.target.y, "; color: green");
+          var color = new THREE.Color(_config["default"].linkColor);
+          color = "#".concat(color.getHexString());
+          return "start: ".concat(d.source.x, " 0 ").concat(d.source.y, "; end: ").concat(d.target.x, " 0 ").concat(d.target.y, "; color: ").concat(color);
         });
       });
       invisible_links.exit().remove();
       var new_invisible_links = invisible_links.enter();
       invisible_links = new_invisible_links.merge(invisible_links);
+      this.testFunc();
       if (force_restart) this.forceSim.alpha(1).restart();
+    } // kinda shit.. idk
+
+  }]);
+
+  return _default;
+}();
+
+exports["default"] = _default;
+});
+
+;require.register("aframe/menuController.js", function(exports, require, module) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports["default"] = void 0;
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
+
+// UNTESTED
+var _default = /*#__PURE__*/function () {
+  function _default() {
+    _classCallCheck(this, _default);
+
+    this.tabIDs = ['#menu', '#cam2', '#node-info'];
+    this.activeTab = 0;
+    this.visible = false; //keep menu and node info classes here idk..
+
+    this.nodeMenu = null;
+    this.nodeInfo = null;
+  } // attaches menu tabs to controllers
+
+
+  _createClass(_default, [{
+    key: "initVR",
+    value: function initVR() {
+      this.tabIDs.forEach(function (id) {
+        var el = document.querySelector(id);
+        var newParent = document.querySelector('#controllerRight');
+        var copy = el.cloneNode(true);
+        newParent.appendChild(copy);
+        el.parentNode.removeChild(el);
+        copy.setAttribute('scale', '0.5 0.5 0.5');
+        copy.setAttribute('rotation', '-30 0 0');
+        copy.setAttribute('position', '0 0.2 -0.2');
+        copy.setAttribute('visible', 'false');
+      });
+    }
+  }, {
+    key: "toggleMenu",
+    value: function toggleMenu() {
+      var activeID = this.tabIDs[this.activeTab];
+      var el = document.querySelector(activeID);
+      el.setAttribute('visible', !el.getAttribute('visible'));
+      this.visible = el.getAttribute('visible');
+      console.log('tab is now', !el.getAttribute('visible') ? 'not visible' : 'visible');
+    }
+  }, {
+    key: "cycleMenu",
+    value: function cycleMenu() {
+      if (this.visible) {
+        var l = this.tabIDs.length();
+        var oldEl = document.querySelector(this.tabIDs[this.activeTab]);
+        this.activeTab = ++this.activeTab % l;
+        var newEl = document.querySelector(this.tabIDs[this.activeTab]);
+        console.log(this.activeTab); //still raycastable if invisible?
+
+        oldEl.setAttribute('visible', 'false');
+        newEl.setAttribute('visible', 'true');
+      }
+    }
+  }, {
+    key: "setActive",
+    value: function setActive(tab) {
+      var idx = this.tabIDs.indexOf(tab);
+
+      if (idx >= 0) {
+        var oldEl = document.querySelector(this.tabIDs[this.activeTab]);
+        this.activeTab = idx;
+        var newEl = document.querySelector(this.tabIDs[this.activeTab]);
+        oldEl.setAttribute('visible', 'false');
+        newEl.setAttribute('visible', 'true');
+        this.visible = true;
+      }
     }
   }]);
 
@@ -1103,7 +1464,9 @@ var _default = /*#__PURE__*/function () {
     this.node = info.node;
     this.application = info.application;
     this.type = info.type;
-    this.msg_traced = info.msg_traced;
+    this.msg_traced = info.msg_traced; //
+
+    this.color = info.color;
 
     if (this.isGroupingProcess()) {
       this.invisible_links = {};
@@ -1341,7 +1704,33 @@ var _default = socket;
 exports["default"] = _default;
 });
 
-;
+;require.register("aframe/util.js", function(exports, require, module) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.offsetColor = offsetColor;
+
+function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
+
+function offsetColor(color) {
+  var offset = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0.5;
+
+  if (_typeof(color) == 'object' && color.isColor) {
+    var r = color.r,
+        g = color.g,
+        b = color.b;
+    var shifted = new THREE.Color(r, g, b);
+    shifted.offsetHSL(offset, 0, 0);
+    return shifted;
+  } else {
+    return new THREE.Color(0xff0000);
+  }
+}
+});
+
+
 require.register("phoenix_html/priv/static/phoenix_html.js", function(exports, require, module) {
   require = __makeRelativeRequire(require, {}, "phoenix_html");
   (function() {
