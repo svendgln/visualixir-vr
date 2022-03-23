@@ -246,8 +246,29 @@ var _default = /*#__PURE__*/function () {
     this.graph = new _graph["default"](graph_container, this);
     this.channel = window.socket.channel('trace', {});
     this.channel.join();
-    this.channel.on("visualize_node", function (msg) {
+    this.channel.on('visualize_node', function (msg) {
       return _this.visualizeNode(msg);
+    });
+    this.channel.on('cleanup_node', function (msg) {
+      return _this.cleanupNode(msg);
+    });
+    this.channel.on('spawn', function (msg) {
+      return _this.spawn(msg);
+    });
+    this.channel.on('exit', function (msg) {
+      return _this.exit(msg);
+    });
+    this.channel.on('name', function (msg) {
+      return _this.name(msg);
+    });
+    this.channel.on('links', function (msg) {
+      return _this.links(msg);
+    });
+    this.channel.on('unlink', function (msg) {
+      return _this.unlink(msg);
+    });
+    this.channel.on('msg', function (msg) {
+      return _this.msg(msg);
     });
   }
 
@@ -262,6 +283,41 @@ var _default = /*#__PURE__*/function () {
       }); //this.nodes++;
 
       this.graph.update(true);
+    }
+  }, {
+    key: "cleanupNode",
+    value: function cleanupNode(msg) {
+      console.log('cleanup node');
+    }
+  }, {
+    key: "spawn",
+    value: function spawn(msg) {
+      console.log('spawn');
+    }
+  }, {
+    key: "exit",
+    value: function exit(msg) {
+      console.log('exit');
+    }
+  }, {
+    key: "name",
+    value: function name(msg) {
+      console.log('name');
+    }
+  }, {
+    key: "links",
+    value: function links(msg) {
+      console.log('links');
+    }
+  }, {
+    key: "unlink",
+    value: function unlink(msg) {
+      console.log('unlink');
+    }
+  }, {
+    key: "msg",
+    value: function msg(_msg) {
+      console.log('msg');
     }
   }, {
     key: "addProcess",
@@ -1034,7 +1090,8 @@ var NodeInfo = /*#__PURE__*/function () {
           node = info.node,
           type = info.type;
       var numLinks = Object.keys(links).length.toString();
-      this.titleField.setAttribute('value', "Node Info: ".concat(name));
+      this.titleField.setAttribute('value', "Node Info: ".concat(name)); // append id somewhere
+
       this.nodeField.setAttribute('value', "Node: ".concat(node));
       this.applField.setAttribute('value', "Application: ".concat(application));
       this.typeField.setAttribute('value', "Type: ".concat(type));

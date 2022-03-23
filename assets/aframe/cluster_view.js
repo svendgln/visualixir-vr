@@ -17,7 +17,14 @@ export default class {
         this.channel = window.socket.channel('trace', {});
         this.channel.join();
 
-        this.channel.on("visualize_node", msg => this.visualizeNode(msg));
+        this.channel.on('visualize_node', msg => this.visualizeNode(msg));
+        this.channel.on('cleanup_node', msg => this.cleanupNode(msg));
+        this.channel.on('spawn', msg => this.spawn(msg));
+        this.channel.on('exit', msg => this.exit(msg));
+        this.channel.on('name', msg => this.name(msg));
+        this.channel.on('links', msg => this.links(msg));
+        this.channel.on('unlink', msg => this.unlink(msg));
+        this.channel.on('msg', msg => this.msg(msg));
     }
 
     visualizeNode(msg) {
@@ -25,6 +32,42 @@ export default class {
         $.each(msg.pids, (pid, info) => this.addProcess(pid, info));
         //this.nodes++;
         this.graph.update(true);
+    }
+
+    cleanupNode(msg) {
+        console.log('cleanup node');
+        //delete all processes from node
+        $.each(this.processes, (pid, process) => {
+            if (process.node == msg.node) {
+                this.removeProcess(pid);
+            }
+        });
+        delete this.grouping_processes[msg.node];
+        this.graph.update(true); //no reload if false?
+    }
+
+    spawn(msg) {
+        console.log('spawn')
+    }
+
+    exit(msg) {
+        console.log('exit')
+    }
+
+    name(msg) {
+        console.log('name')
+    }
+
+    links(msg) {
+        console.log('links')
+    }
+
+    unlink(msg) {
+        console.log('unlink')
+    }
+
+    msg(msg) {
+        console.log('msg')
     }
 
     addProcess(pid, info) {
@@ -52,6 +95,14 @@ export default class {
         info.links.forEach(other_pid => this.addLink(process, this.processes[other_pid]));
     }
 
+    addLink(from, to) {
+        if (from && to) {
+            from.links[to.id] = to;
+            to.links[from.id] = from;
+            this.graph.addLink(from, to);
+        }
+    }
+
     // if grouping process not yet seen, skip
     // grouping p seen -> add all skipped nodes
     // each node afterwards will be added right away
@@ -62,17 +113,45 @@ export default class {
         if (grouping_process) {
             // process was added before
             grouping_process.invisible_links[process.id] = process;
-            this.graph.addInvisibleLink(grouping_process, process); //TODO
+            this.graph.addInvisibleLink(grouping_process, process);
         }
         // not yet seen, skip and add later..
     }
 
-    addLink(from, to) {
-        if (from && to) {
-            from.links[to.id] = to;
-            to.links[from.id] = from;
-            this.graph.addLink(from, to); //TODO
+    removeInvisibleLink(process) {
+
+    }
+
+    removeProcess(pid) {
+        if (!this.processes[pid]) {
+            console.log('tried to remove unknown process', pid);
+            return;
         }
+        let process = this.processes[pid];
+        $.each(process.links, (_other_pid, other_process) => delete other_process.links[pid]);
+        this.removeInvisibleLink(process);
+        //difference between ↑ ↓ ? dafuq
+        d3.values(process.links).forEach(linked_process => {
+            delete linked_process.links[pid];
+
+            //when a process exits, its linked ports also exit
+            if (linked_process.id.match(/#Port<[\d\.]+>/)) {
+                delete this.processes[linked_process.id];
+            }
+        });
+        this.graph.removeProcess(process); //TODO
+        delete this.processes[pid];
+    }
+
+    msgTracePID(id) {
+        // this.channel.push('msg_trace', id); //TODO
+    }
+
+    stopMsgTraceAll(node) {
+        console.log('stop msg tracing (TODO)');
+        // this.channel.push('stop_msg_trace_all', node);
+        // this.graph.stopMsgTraceAll();
+        // this.graph.update(false);
     }
 
     collapseNode(pid) {
