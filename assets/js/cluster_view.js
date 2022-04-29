@@ -189,6 +189,7 @@ export default class {
   }
 
   msgTracePID(id) {
+    console.log('tracing: ', id);
     this.channel.push("msg_trace", id);
   }
 

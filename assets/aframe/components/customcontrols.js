@@ -1,3 +1,28 @@
+export default class Controls {
+
+    static cycleMenu() {
+        window.app.menuController.cycleMenu();
+    }
+
+    static toggleMenu() {
+        window.app.menuController.toggleMenu();
+    }
+}
+
+window.addEventListener('keydown', function (e) {
+    switch (e.key) {
+        case 'm':
+            Controls.toggleMenu();
+            break;
+        case 'r':
+            Controls.cycleMenu();
+            break;
+        default:
+            break;
+    }
+})
+
+
 AFRAME.registerComponent('custom-controls', {
     schema: {
         cameraRig: { type: 'selector', default: '#cameraRig' },
@@ -20,9 +45,11 @@ AFRAME.registerComponent('custom-controls', {
 
         // controller events
         // trigger
+        // dont use triggers for clicking, raycaster fires click event
+        // also wont click non vr
         controllerLeft.addEventListener('triggerdown', evt => {
             console.log('LEFT TRIGGER');
-            console.log(evt)
+            //console.log(evt)
             // could differentiate between left/right controller..
             // for now just using click event..
             //
@@ -36,17 +63,22 @@ AFRAME.registerComponent('custom-controls', {
         // grip button
         controllerLeft.addEventListener('gripdown', evt => {
             console.log('LEFT GRIP');
+            // cycle controller mode and show popup thingy..
+            // HMM ??
+            // doesnt work non vr.. 
         });
 
         controllerRight.addEventListener('gripdown', evt => {
             console.log('RIGHT GRIP');
+            Controls.cycleMenu();
+            //window.app.menuController.cycleMenu(); // added to class
+            // diff between left and right menus idk
         });
 
         // menu button
         controllerLeft.addEventListener('menudown', evt => {
             console.log('LEFT MENU');
-            // toggle overview cam, on hide: remove components to prevent updates
-            // movable x/z when toggled?..
+            // toggle mode or some shit
         });
 
         controllerRight.addEventListener('menudown', evt => {
@@ -54,14 +86,17 @@ AFRAME.registerComponent('custom-controls', {
             // call this.somefunction toggle menu idk
 
             //get active tab id, cycle to next on side grip etc
-            const m = document.querySelector('#menu');
-            m.setAttribute('visible', !m.getAttribute('visible'));
-            console.log('menu is now', !m.getAttribute('visible')? 'not visible' : 'visible');
+            Controls.toggleMenu();
+            //window.app.menuController.toggleMenu(); // added to class
+            // const m = document.querySelector('#menu');
+            // m.setAttribute('visible', !m.getAttribute('visible'));
+            // console.log('menu is now', !m.getAttribute('visible')? 'not visible' : 'visible');
         });
 
         // trackpad
         controllerLeft.addEventListener('axismove', evt => {
             // position on trackpad, x,z values [-1,1]
+            // TODO just yeet this.axis = evt...
             const axis = evt.detail.axis;
             this.axis = axis;
         });

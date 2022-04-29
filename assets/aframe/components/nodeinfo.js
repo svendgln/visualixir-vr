@@ -13,7 +13,7 @@ export default class NodeInfo {
         console.log('NODEINFO LOADED');
 
         this.container = document.querySelector('a-scene #node-info');
-        this.activeID = false; //false or active node(process) idk
+        this.activeNode = false; //false or active node(process) idk
 
         this.titleField = document.querySelector('#node-info-title');
         this.nodeField  = document.querySelector('#node-info-node');
@@ -36,7 +36,8 @@ export default class NodeInfo {
         this.typeField.setAttribute('value', `Type: ${type}`);
         this.linksField.setAttribute('value', `#Links: ${numLinks}`);
         // set collapse button callback
-        this.activeID = id;
+        this.activeNode = info;
+        //temp
         this.collapseBtn.setAttribute('menu-button', `args: ${id}`)
     }
 }

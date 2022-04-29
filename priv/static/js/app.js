@@ -468,6 +468,7 @@ var _default = /*#__PURE__*/function () {
   }, {
     key: "msgTracePID",
     value: function msgTracePID(id) {
+      console.log('tracing: ', id);
       this.channel.push("msg_trace", id);
     }
   }, {

@@ -161,6 +161,8 @@ var _cluster_view = _interopRequireDefault(require("./cluster_view.js"));
 
 var _menuController = _interopRequireDefault(require("./menuController.js"));
 
+var _customcontrols = _interopRequireDefault(require("./components/customcontrols.js"));
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
 
 function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
@@ -178,7 +180,7 @@ console.log("loading aframe app"); // const fs = require('fs');
 
 //window.socket.channel("nodes", {}).join().receive("ok", () => console.log('FRFRFRF'));
 // temp fix
-var components = ['clicktest.js', 'customcontrols.js', 'debug.js', 'enterleave.js', 'menubutton.js', 'menu.js', 'camrender.js', 'nodeinfo.js'];
+var components = ['clicktest.js', 'customcontrols.js', 'debug.js', 'enterleave.js', 'menubutton.js', 'menu.js', 'camrender.js', 'nodeinfo.js', 'logger.js'];
 components.forEach(function (c) {
   console.log('importing ', c);
 
@@ -188,6 +190,7 @@ components.forEach(function (c) {
 var AframeApp = /*#__PURE__*/_createClass(function AframeApp() {
   _classCallCheck(this, AframeApp);
 
+  //this.controls = new Controls(); //callbacks for keyboard presses and vr controllers
   //this.menu = new Menu();
   this.clusterView = new _cluster_view["default"]('NOT USED'); //this.menu = new Menu();
 
@@ -287,17 +290,39 @@ var _default = /*#__PURE__*/function () {
   }, {
     key: "cleanupNode",
     value: function cleanupNode(msg) {
-      console.log('cleanup node');
+      var _this3 = this;
+
+      console.log('cleanup node'); //delete all processes from node
+
+      $.each(this.processes, function (pid, process) {
+        if (process.node == msg.node) {
+          _this3.removeProcess(pid);
+        }
+      });
+      delete this.grouping_processes[msg.node];
+      this.graph.update(true); //no reload if false?
     }
   }, {
     key: "spawn",
     value: function spawn(msg) {
-      console.log('spawn');
+      var _this4 = this;
+
+      $.each(msg, function (pid, info) {
+        _this4.addProcess(pid, info); // might need null check idk
+
+
+        window.app.Logger.logOne(_this4.processes[pid], 'spawn');
+      });
+      this.graph.update(true);
     }
   }, {
     key: "exit",
     value: function exit(msg) {
-      console.log('exit');
+      if (this.processes[msg.pid]) {
+        window.app.Logger.logOne(this.processes[msg.pid], 'exit');
+        this.removeProcess(msg.pid);
+        this.graph.update(true);
+      }
     }
   }, {
     key: "name",
@@ -307,22 +332,47 @@ var _default = /*#__PURE__*/function () {
   }, {
     key: "links",
     value: function links(msg) {
-      console.log('links');
+      var from = this.processes[msg.from],
+          to = this.processes[msg.to];
+
+      if (from && to) {
+        this.addLink(from, to);
+        window.app.Logger.logTwo(from, to, 'link'); // from was unlinked so had an invisible link
+
+        if (!msg.from_was_unlinked) this.removeInvisibleLink(from);
+        if (!msg.to_was_unlinked) this.removeInvisibleLink(to);
+        this.graph.update(true);
+      }
     }
   }, {
     key: "unlink",
     value: function unlink(msg) {
-      console.log('unlink');
+      var from = this.processes[msg.from],
+          to = this.processes[msg.to];
+
+      if (from && to) {
+        this.graph.removeLink(from, to); //TODO
+
+        window.app.Logger.logTwo(from, to, 'unlink'); // from now has no links, add invisible link
+
+        if (!msg.from_any_links) this.addInvisibleLink(from);
+        if (!msg.to_any_links) this.addInvisibleLink(to);
+        this.graph.update(true);
+      }
     }
   }, {
     key: "msg",
     value: function msg(_msg) {
-      console.log('msg');
+      // incoming msgs from traced processes
+      var from = this.processes[_msg.from_pid],
+          to = this.processes[_msg.to_pid]; // why tf different here lol
+
+      window.app.Tracer.logMessage(from, to, _msg.msg); //TODO shit from 2D needed here??
     }
   }, {
     key: "addProcess",
     value: function addProcess(pid, info) {
-      var _this3 = this;
+      var _this5 = this;
 
       if (this.processes[pid]) return; //exists
       //let color = cfg.COLORS[this.nodes % cfg.COLORS.length];
@@ -337,7 +387,7 @@ var _default = /*#__PURE__*/function () {
 
         d3.values(this.processes).forEach(function (maybe_unlinked_process) {
           if (!maybe_unlinked_process.isGroupingProcess()) {
-            _this3.addInvisibleLink(maybe_unlinked_process);
+            _this5.addInvisibleLink(maybe_unlinked_process);
           }
         });
       } else {
@@ -345,8 +395,17 @@ var _default = /*#__PURE__*/function () {
       }
 
       info.links.forEach(function (other_pid) {
-        return _this3.addLink(process, _this3.processes[other_pid]);
+        return _this5.addLink(process, _this5.processes[other_pid]);
       });
+    }
+  }, {
+    key: "addLink",
+    value: function addLink(from, to) {
+      if (from && to) {
+        from.links[to.id] = to;
+        to.links[from.id] = from;
+        this.graph.addLink(from, to);
+      }
     } // if grouping process not yet seen, skip
     // grouping p seen -> add all skipped nodes
     // each node afterwards will be added right away
@@ -361,22 +420,66 @@ var _default = /*#__PURE__*/function () {
       if (grouping_process) {
         // process was added before
         grouping_process.invisible_links[process.id] = process;
-        this.graph.addInvisibleLink(grouping_process, process); //TODO
+        this.graph.addInvisibleLink(grouping_process, process);
       } // not yet seen, skip and add later..
 
     }
   }, {
-    key: "addLink",
-    value: function addLink(from, to) {
-      if (from && to) {
-        from.links[to.id] = to;
-        to.links[from.id] = from;
-        this.graph.addLink(from, to); //TODO
+    key: "removeInvisibleLink",
+    value: function removeInvisibleLink(process) {
+      var grouping_processes = this.grouping_processes[process.node];
+
+      if (grouping_processes) {
+        delete grouping_processes.invisible_links[process.id];
+        this.graph.removeInvisibleLink(grouping_processes, process);
       }
     }
   }, {
+    key: "removeProcess",
+    value: function removeProcess(pid) {
+      var _this6 = this;
+
+      if (!this.processes[pid]) {
+        console.log('tried to remove unknown process', pid);
+        return;
+      }
+
+      var process = this.processes[pid];
+      $.each(process.links, function (_other_pid, other_process) {
+        return delete other_process.links[pid];
+      });
+      this.removeInvisibleLink(process); //difference between ↑ ↓ ? dafuq
+
+      d3.values(process.links).forEach(function (linked_process) {
+        delete linked_process.links[pid]; //when a process exits, its linked ports also exit
+
+        if (linked_process.id.match(/#Port<[\d\.]+>/)) {
+          delete _this6.processes[linked_process.id];
+        }
+      });
+      this.graph.removeProcess(process);
+      delete this.processes[pid];
+    }
+  }, {
+    key: "msgTracePID",
+    value: function msgTracePID(id) {
+      console.log('tracing: ', id);
+      this.channel.push('msg_trace', id);
+    }
+  }, {
+    key: "stopMsgTraceAll",
+    value: function stopMsgTraceAll(node) {
+      console.log('stop msg tracing');
+      this.channel.push('stop_msg_trace_all', node);
+      this.graph.stopMsgTraceAll();
+      this.graph.update(false);
+    } // TODO probs remove this shit no worky
+
+  }, {
     key: "collapseNode",
     value: function collapseNode(pid) {
+      // not gonna work with menu button component
+      // dont implement or use graph onclick instead..
       console.log('nothing yet');
     }
   }]);
@@ -475,6 +578,52 @@ AFRAME.registerComponent('clicktest', {
 ;require.register("aframe/components/customcontrols.js", function(exports, require, module) {
 "use strict";
 
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports["default"] = void 0;
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
+
+var Controls = /*#__PURE__*/function () {
+  function Controls() {
+    _classCallCheck(this, Controls);
+  }
+
+  _createClass(Controls, null, [{
+    key: "cycleMenu",
+    value: function cycleMenu() {
+      window.app.menuController.cycleMenu();
+    }
+  }, {
+    key: "toggleMenu",
+    value: function toggleMenu() {
+      window.app.menuController.toggleMenu();
+    }
+  }]);
+
+  return Controls;
+}();
+
+exports["default"] = Controls;
+window.addEventListener('keydown', function (e) {
+  switch (e.key) {
+    case 'm':
+      Controls.toggleMenu();
+      break;
+
+    case 'r':
+      Controls.cycleMenu();
+      break;
+
+    default:
+      break;
+  }
+});
 AFRAME.registerComponent('custom-controls', {
   schema: {
     cameraRig: {
@@ -514,10 +663,12 @@ AFRAME.registerComponent('custom-controls', {
     this.axis = [0, 0]; //controller trackpad x,z axis
     // controller events
     // trigger
+    // dont use triggers for clicking, raycaster fires click event
+    // also wont click non vr
 
     controllerLeft.addEventListener('triggerdown', function (evt) {
-      console.log('LEFT TRIGGER');
-      console.log(evt); // could differentiate between left/right controller..
+      console.log('LEFT TRIGGER'); //console.log(evt)
+      // could differentiate between left/right controller..
       // for now just using click event..
       //
       // on click check intersection
@@ -528,27 +679,32 @@ AFRAME.registerComponent('custom-controls', {
     }); // grip button
 
     controllerLeft.addEventListener('gripdown', function (evt) {
-      console.log('LEFT GRIP');
+      console.log('LEFT GRIP'); // cycle controller mode and show popup thingy..
+      // HMM ??
+      // doesnt work non vr.. 
     });
     controllerRight.addEventListener('gripdown', function (evt) {
       console.log('RIGHT GRIP');
+      Controls.cycleMenu(); //window.app.menuController.cycleMenu(); // added to class
+      // diff between left and right menus idk
     }); // menu button
 
     controllerLeft.addEventListener('menudown', function (evt) {
-      console.log('LEFT MENU'); // toggle overview cam, on hide: remove components to prevent updates
-      // movable x/z when toggled?..
+      console.log('LEFT MENU'); // toggle mode or some shit
     });
     controllerRight.addEventListener('menudown', function (evt) {
       console.log('RIGHT MENU'); // call this.somefunction toggle menu idk
       //get active tab id, cycle to next on side grip etc
 
-      var m = document.querySelector('#menu');
-      m.setAttribute('visible', !m.getAttribute('visible'));
-      console.log('menu is now', !m.getAttribute('visible') ? 'not visible' : 'visible');
+      Controls.toggleMenu(); //window.app.menuController.toggleMenu(); // added to class
+      // const m = document.querySelector('#menu');
+      // m.setAttribute('visible', !m.getAttribute('visible'));
+      // console.log('menu is now', !m.getAttribute('visible')? 'not visible' : 'visible');
     }); // trackpad
 
     controllerLeft.addEventListener('axismove', function (evt) {
       // position on trackpad, x,z values [-1,1]
+      // TODO just yeet this.axis = evt...
       var axis = evt.detail.axis;
       _this.axis = axis;
     }); // right trackpad: use click and axis location to create arrow key functionality?.. for.. something..
@@ -648,6 +804,174 @@ AFRAME.registerComponent('enterleave', {
 });
 });
 
+;require.register("aframe/components/logger.js", function(exports, require, module) {
+"use strict";
+
+function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.Tracer = exports.MsgLogger = exports.Logger = void 0;
+
+var _config = _interopRequireDefault(require("../config"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); Object.defineProperty(subClass, "prototype", { writable: false }); if (superClass) _setPrototypeOf(subClass, superClass); }
+
+function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
+function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function _createSuperInternal() { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
+
+function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } else if (call !== void 0) { throw new TypeError("Derived constructors may only return object or undefined"); } return _assertThisInitialized(self); }
+
+function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
+
+function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); return true; } catch (e) { return false; } }
+
+function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
+
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
+
+// logs status messages
+// TODO rename other menu tabs to ..-tab
+AFRAME.registerComponent('logger-tab', {
+  dependencies: ['geometry'],
+  init: function init() {
+    var dims = document.querySelector('a-scene').getBoundingClientRect();
+    var el = document.querySelector('#logger-info'); //el.setAttribute('position', `${dims.x, }`);
+
+    window.app.Logger = new Logger(el);
+  }
+}); // logs node communication
+
+AFRAME.registerComponent('tracer-tab', {
+  dependencies: ['geometry'],
+  init: function init() {
+    var dims = document.querySelector('a-scene').getBoundingClientRect();
+    var el = document.querySelector('#logger-trace');
+    window.app.Tracer = new Tracer(el);
+  }
+}); // logger just adds string to tab idk
+// string generated by subclass method
+
+var MsgLogger = /*#__PURE__*/function () {
+  function MsgLogger(container) {
+    _classCallCheck(this, MsgLogger);
+
+    this.maxMessages = _config["default"].maxMessages;
+    this.messages = new Array();
+    this.window = 0;
+    this.wSize = 3; // sliding window type shit
+    // use window and size to slice msgs from array
+  }
+
+  _createClass(MsgLogger, [{
+    key: "addMsg",
+    value: function addMsg(msg) {
+      console.log(msg); //this.messages.unshift(msg);
+      // do some rerender shit
+    }
+  }, {
+    key: "render",
+    value: function render() {// add messages in window to container
+    } // probs do some scroll shit
+
+  }]);
+
+  return MsgLogger;
+}(); // log one / 2
+
+
+exports.MsgLogger = MsgLogger;
+
+var Logger = /*#__PURE__*/function (_MsgLogger) {
+  _inherits(Logger, _MsgLogger);
+
+  var _super = _createSuper(Logger);
+
+  // all nodes
+  function Logger(container) {
+    _classCallCheck(this, Logger);
+
+    return _super.call(this, container);
+  }
+
+  _createClass(Logger, [{
+    key: "logOne",
+    value: function logOne(process, type) {
+      var name = process.name;
+      var action = Logger.types.get(type);
+      var node = process.node;
+      console.log(name, action, node);
+    }
+  }, {
+    key: "logTwo",
+    value: function logTwo(from, to, type) {
+      console.log(from.name, Logger.types.get(type), to.name);
+    }
+  }]);
+
+  return Logger;
+}(MsgLogger); // log 2
+
+
+exports.Logger = Logger;
+
+_defineProperty(Logger, "types", new Map(Object.entries({
+  'spawn': 'spawned on',
+  'exit': 'exited on',
+  'link': 'linked with',
+  'unlink': 'unlinked from'
+})));
+
+var Tracer = /*#__PURE__*/function (_MsgLogger2) {
+  _inherits(Tracer, _MsgLogger2);
+
+  var _super2 = _createSuper(Tracer);
+
+  // selected nodes
+  function Tracer(container) {
+    var _this;
+
+    _classCallCheck(this, Tracer);
+
+    _this = _super2.call(this, container);
+    _this.selected = new Map(); // idk map maybe..
+
+    return _this;
+  }
+
+  _createClass(Tracer, [{
+    key: "logMessage",
+    value: function logMessage(from, to, msg) {
+      console.log(from.name + '->' + to.name + ': ' + msg);
+    } // this shite even needed?
+    // dont need to store traced nodes here..
+    // selecting done in graph onclick
+
+  }, {
+    key: "select",
+    value: function select() {// traced component..
+    }
+  }, {
+    key: "remove",
+    value: function remove() {}
+  }]);
+
+  return Tracer;
+}(MsgLogger);
+
+exports.Tracer = Tracer;
+});
+
 ;require.register("aframe/components/menu.js", function(exports, require, module) {
 "use strict";
 
@@ -687,21 +1011,13 @@ AFRAME.registerComponent('menu', {
 
     window.app.menuController.nodeMenu = new Menu(); //load menuController here? idk consistency
 
-    document.querySelector('a-scene').addEventListener('enter-vr', function () {
+    var scene = document.querySelector('a-scene');
+    scene.addEventListener('enter-vr', function () {
       console.log("ENTERED VR");
-      window.app.menuController.initVR(); // attach menu to controller
-      // moved to menuController
-      // let entity = document.querySelector('#menu');
-      // let newParent = document.querySelector('#controllerRight');
-      // //entity.flushToDOM(); //not needed? dafuq
-      // let copy = entity.cloneNode(true);
-      // newParent.appendChild(copy);
-      // entity.parentNode.removeChild(entity);
-      // //resize
-      // copy.setAttribute('scale', '0.5 0.5 0.5');
-      // copy.setAttribute('rotation', '-30 0 0');
-      // copy.setAttribute('position', '0 0.2 -0.2');
-    });
+      window.app.menuController.initVR();
+    }); // scene.addEventListener('exit-vr', function () {
+    //     window.app.menuController.exitVR();
+    // })
   }
 });
 
@@ -868,25 +1184,35 @@ function nodeClick(target, args) {
     target.setAttribute('text', 'color: green');
     window.app.menuController.nodeMenu.visualizeNode(nodeName); //target.flushToDOM();
   }
+}
+
+function noOp(target, args) {
+  console.log('no op function');
+  return null;
 } //move to file
 
 
 function nodeInfo(target, args) {
-  var data = target.__data__;
-  console.log('Node Info Command: ', data);
+  var data = target.__data__; //console.log('Node Info TARGET: ', target);
+
+  console.log('Node Info Command Data: ', data); //console.log('TEST', data.children);
+
   window.app.menuController.nodeInfo.displayNodeInfo(data);
-}
+} // use D3 shit for this
+
 
 function collapseNode(target, args) {
   var pid = args[0];
   console.log('collapse', pid);
+  console.log('target = ', target);
 
   if (pid) {
     window.app.clusterView.collapseNode(pid);
   } else {
     console.log('no active node or node disconnected');
   }
-}
+} // maybe rename to clickable or idk
+
 
 AFRAME.registerSystem('menu-button', {
   init: function init() {
@@ -897,13 +1223,15 @@ AFRAME.registerSystem('menu-button', {
       console.log('custom callback on', target, 'with args: ', args);
       document.test();
     } //temp
+    //TODO change to just map.set idk
 
 
     this.addCommand('testRemove', document.test2);
     this.addCommand('test', test);
-    this.addCommand('nodeClick', nodeClick);
-    this.addCommand('nodeInfo', nodeInfo);
+    this.addCommand('nodeClick', nodeClick); //this.addCommand('nodeInfo', nodeInfo);
+
     this.addCommand('collapseNode', collapseNode);
+    this.addCommand('noOp', noOp);
     this.listCommands();
   },
   addCommand: function addCommand(name, func) {
@@ -953,7 +1281,7 @@ AFRAME.registerComponent('menu-button', {
     },
     name: {
       type: 'string',
-      "default": ''
+      "default": 'noOp'
     },
     args: {
       type: 'array',
@@ -1067,7 +1395,7 @@ var NodeInfo = /*#__PURE__*/function () {
 
     console.log('NODEINFO LOADED');
     this.container = document.querySelector('a-scene #node-info');
-    this.activeID = false; //false or active node(process) idk
+    this.activeNode = false; //false or active node(process) idk
 
     this.titleField = document.querySelector('#node-info-title');
     this.nodeField = document.querySelector('#node-info-node');
@@ -1097,7 +1425,8 @@ var NodeInfo = /*#__PURE__*/function () {
       this.typeField.setAttribute('value', "Type: ".concat(type));
       this.linksField.setAttribute('value', "#Links: ".concat(numLinks)); // set collapse button callback
 
-      this.activeID = id;
+      this.activeNode = info; //temp
+
       this.collapseBtn.setAttribute('menu-button', "args: ".concat(id));
     }
   }]);
@@ -1120,7 +1449,8 @@ var _default = {
   COLORS: [0x92b82a, 0xff0000, 0x00ff00, 0x0000ff],
   supervisorOffset: 0.3,
   portOffset: -0.3,
-  linkColor: 0x21a33b
+  linkColor: 0x21a33b,
+  maxMessages: 10
 };
 exports["default"] = _default;
 });
@@ -1176,7 +1506,8 @@ var _default = /*#__PURE__*/function () {
         var node = nodeList[i];
 
         if (node) {
-          var d = node.__data__; // +5 to compensate for relative position of graph, can probably get world pos
+          var d = node.__data__; // TODO change graph pos to 0,0
+          // +5 to compensate for relative position of graph, can probably get world pos
 
           var dist = Math.sqrt(Math.pow(d.x + 5 - camPos.x, 2) + Math.pow(d.y + 5 - camPos.z, 2)); // console.log(d.x, d.y, camPos.x, camPos.z, dist)
           // let line = document.querySelector('#LINETEST');
@@ -1185,6 +1516,7 @@ var _default = /*#__PURE__*/function () {
           var text = node.firstChild; //add showAllNodes boolean controlled by menu button idk..
 
           if (dist < 3) {
+            // TODO change dist in menu?? + - buttons or smth
             // console.log(node);
             text.setAttribute('visible', true); //add user height to position
 
@@ -1246,6 +1578,12 @@ var _default = /*#__PURE__*/function () {
       }
     }
   }, {
+    key: "removeLink",
+    value: function removeLink(source, target) {
+      var id = this.link_id(source, target);
+      delete this.links[id];
+    }
+  }, {
     key: "addInvisibleLink",
     value: function addInvisibleLink(source, target) {
       if (source && target) {
@@ -1258,9 +1596,51 @@ var _default = /*#__PURE__*/function () {
       }
     }
   }, {
+    key: "removeInvisibleLink",
+    value: function removeInvisibleLink(source, target) {
+      if (source && target) {
+        var id = this.link_id(source, target);
+        delete this.invisible_links[id];
+      }
+    }
+  }, {
+    key: "removeProcess",
+    value: function removeProcess(process) {
+      var _this2 = this;
+
+      d3.values(process.links).forEach(function (linked_process) {
+        delete _this2.links[_this2.link_id(process, linked_process)];
+      });
+      var grouping_process = this.cluster_view.grouping_processes[process.node];
+
+      if (grouping_process) {
+        this.removeInvisibleLink(process, grouping_process);
+      }
+
+      if (process == grouping_process) {
+        d3.keys(process.invisible_links).forEach(function (other_process) {
+          _this2.removeInvisibleLink(process, other_process);
+        });
+      }
+    }
+  }, {
+    key: "msgTraceProcess",
+    value: function msgTraceProcess(d, node) {
+      console.log('traceProcess: ', d);
+      d.msg_traced = true;
+      this.cluster_view.msgTracePID(d.id); // TODO add traced component to node..
+    }
+  }, {
+    key: "stopMsgTraceAll",
+    value: function stopMsgTraceAll() {
+      d3.values(this.cluster_view.processes).forEach(function (pid) {
+        pid.msg_traced = false;
+      });
+    }
+  }, {
     key: "update",
     value: function update(force_restart) {
-      var _this2 = this;
+      var _this3 = this;
 
       var pids_list = d3.values(this.cluster_view.processes),
           links_list = d3.values(this.links),
@@ -1277,10 +1657,10 @@ var _default = /*#__PURE__*/function () {
       this.processes = processes; //
 
       var links = this.linkContainer.selectAll('a-entity').data(links_list, function (d) {
-        return _this2.link_id(d.source, d.target);
+        return _this3.link_id(d.source, d.target);
       });
       var invisible_links = this.invisibleLinkContainer.selectAll('a-entity').data(invisible_links_list, function (d) {
-        return _this2.link_id(d.source, d.target);
+        return _this3.link_id(d.source, d.target);
       }); //console.log('prcs', processes);
 
       this.forceSim.nodes(pids_list);
@@ -1347,15 +1727,43 @@ var _default = /*#__PURE__*/function () {
 
 
           return "shader: standard; color: #".concat(color.getHexString(), ";");
-        }) //.on('click', function (d, i) {
-        //    console.log('clicked graph node');
-        //    console.log(this.__data__, d);
-        //NO ON CLICK.. -> DELETE IG LOL
-        //set menubutton component with nodeInfo callback
-        //data can be accessed through event.target
-        //})
+        }).on('click', function (d, i) {
+          //if (d3.event.defaultPrevented) return;
+          //    console.log('clicked graph node CALLBACK');
+          //    console.log(this.__data__, d);
+          var mc = window.app.menuController;
+          var activeMenu = mc.tabIDs[mc.activeTab];
+          var visible = mc.visible;
+          console.log(activeMenu, visible);
+          if (!visible) return;
+
+          switch (activeMenu) {
+            case "#node-info":
+              console.log(this);
+              mc.nodeInfo.displayNodeInfo(this.__data__);
+              console.log('display from graph');
+              break;
+
+            case "#logger-trace":
+              // add to selected nodes..?
+              //d: event, this: dom el? TODO check tf this is lol
+              self.msgTraceProcess(this.__data__, d.target);
+              break;
+
+            default:
+              console.log('das ni just precies');
+              break;
+          } // d is click event?
+          // NO ON CLICK.. -> DELETE IG LOL
+          // set menubutton component with nodeInfo callback
+          // data can be accessed through event.target
+
+        }) // .attr('raycastable', function (d, i) {
+        //     return '';
+        // })
+        //no op function but still highlights nodes
         .attr('menu-button', function (d, i) {
-          return 'name: nodeInfo; offset: 0.1';
+          return 'name: noOp; offset: 0.1';
         }) // add node information text
         .each(function (d, i) {
           console.log('b'); //cant be entity.. selectAll entity error, maybe change to select by class..
@@ -1423,53 +1831,107 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 // UNTESTED
 var _default = /*#__PURE__*/function () {
   function _default() {
+    var _this = this;
+
     _classCallCheck(this, _default);
 
-    this.tabIDs = ['#menu', '#cam2', '#node-info'];
+    this.isVR = false;
+    this.tabIDs = ['#menu',
+    /*'#cam2',*/
+    '#node-info', '#logger-info', '#logger-trace'];
     this.activeTab = 0;
     this.visible = false; //keep menu and node info classes here idk..
 
-    this.nodeMenu = null;
-    this.nodeInfo = null;
-  } // attaches menu tabs to controllers
+    this.nodeMenu = null; //initialized when components load
+
+    this.nodeInfo = null; //this.init();
+    // TODO fucking useless shite
+
+    document.querySelector('body').onresize = function () {
+      // resize only when in desktop mode
+      if (_this.isVR) return;
+      console.log('resize');
+
+      _this.resizeTabs();
+    };
+  } // TODO FIX OR REMOVE
 
 
   _createClass(_default, [{
+    key: "resizeTabs",
+    value: function resizeTabs() {
+      var dims = document.querySelector('a-scene').getBoundingClientRect(); // or use window.innerHeight etc
+
+      this.tabIDs.forEach(function (id) {
+        //const scale = cfg.menuScale * dims.height; //% of scene height
+        var dist = 0.01; // idk
+        //const sceneH = dims.height;
+
+        var el = document.querySelector(id); //const x = 
+        // el.setAttribute('height', `${0.01 * scale}`); // ??? lol
+        // el.setAttribute('width', `${0.01 * scale}`); // square tab
+        // el.setAttribute('scale', `${0.01} ${0.01} ${0.01}`);
+        // el.setAttribute('position', .);
+      });
+    } // attaches menu tabs to controllers
+
+  }, {
     key: "initVR",
     value: function initVR() {
+      this.isVR = true;
       this.tabIDs.forEach(function (id) {
         var el = document.querySelector(id);
         var newParent = document.querySelector('#controllerRight');
         var copy = el.cloneNode(true);
         newParent.appendChild(copy);
         el.parentNode.removeChild(el);
-        copy.setAttribute('scale', '0.5 0.5 0.5');
+        copy.setAttribute('scale', '0.5 0.5 0.5'); // set w/h instead
+
         copy.setAttribute('rotation', '-30 0 0');
         copy.setAttribute('position', '0 0.2 -0.2');
-        copy.setAttribute('visible', 'false');
+        copy.setAttribute('visible', 'false'); //maybe remove raycastable idk
       });
-    }
+    } // maybe change name, init normal 3D settings n shit..
+    // init() {
+    //     this.tabIDs.forEach(id => {
+    //         let el = document.querySelector(id);
+    //         let newParent = document.querySelector('#camera');
+    //         let copy = el.cloneNode(true);
+    //         newParent.appendChild(copy);
+    //         el.parentNode.removeChild(el);
+    //         // copy.removeAttribute('raycastable');
+    //     })
+    // }
+
   }, {
     key: "toggleMenu",
     value: function toggleMenu() {
       var activeID = this.tabIDs[this.activeTab];
       var el = document.querySelector(activeID);
       el.setAttribute('visible', !el.getAttribute('visible'));
-      this.visible = el.getAttribute('visible');
+      this.visible = el.getAttribute('visible'); // if (this.visible) {
+      //     console.log('show');
+      //     el.setAttribute('raycastable', '');
+      // } else {
+      //     console.log('hide');
+      //     el.removeAttribute('raycastable');
+      // }
+
       console.log('tab is now', !el.getAttribute('visible') ? 'not visible' : 'visible');
     }
   }, {
     key: "cycleMenu",
     value: function cycleMenu() {
       if (this.visible) {
-        var l = this.tabIDs.length();
+        var l = this.tabIDs.length;
         var oldEl = document.querySelector(this.tabIDs[this.activeTab]);
         this.activeTab = ++this.activeTab % l;
         var newEl = document.querySelector(this.tabIDs[this.activeTab]);
         console.log(this.activeTab); //still raycastable if invisible?
 
-        oldEl.setAttribute('visible', 'false');
-        newEl.setAttribute('visible', 'true');
+        oldEl.setAttribute('visible', 'false'); // oldEl.removeAttribute('raycastable');
+
+        newEl.setAttribute('visible', 'true'); // newEl.setAttribute('raycastable', '');
       }
     }
   }, {

@@ -47,11 +47,20 @@ export default class {
     }
 
     spawn(msg) {
-        console.log('spawn')
+        $.each(msg, (pid, info) => {
+            this.addProcess(pid, info);
+            // might need null check idk
+            window.app.Logger.logOne(this.processes[pid], 'spawn');
+        });
+        this.graph.update(true);
     }
 
     exit(msg) {
-        console.log('exit')
+        if (this.processes[msg.pid]) {
+            window.app.Logger.logOne(this.processes[msg.pid], 'exit');
+            this.removeProcess(msg.pid);
+            this.graph.update(true);
+        }
     }
 
     name(msg) {
@@ -59,15 +68,49 @@ export default class {
     }
 
     links(msg) {
-        console.log('links')
+        let from = this.processes[msg.from],
+            to = this.processes[msg.to];
+
+        if (from && to) {
+            this.addLink(from, to);
+            window.app.Logger.logTwo(from, to, 'link');
+            // from was unlinked so had an invisible link
+            if (!msg.from_was_unlinked)
+                this.removeInvisibleLink(from);
+
+            if (!msg.to_was_unlinked)
+                this.removeInvisibleLink(to);
+
+            this.graph.update(true);
+        }
     }
 
     unlink(msg) {
-        console.log('unlink')
+        let from = this.processes[msg.from],
+            to = this.processes[msg.to];
+
+        if (from && to) {
+            this.graph.removeLink(from, to); //TODO
+            window.app.Logger.logTwo(from, to, 'unlink');
+            // from now has no links, add invisible link
+            if (!msg.from_any_links)
+                this.addInvisibleLink(from);
+
+            if (!msg.to_any_links)
+                this.addInvisibleLink(to);
+
+            this.graph.update(true);
+        }
     }
 
     msg(msg) {
-        console.log('msg')
+        // incoming msgs from traced processes
+        let from = this.processes[msg.from_pid],
+            to = this.processes[msg.to_pid]; // why tf different here lol
+
+        window.app.Tracer.logMessage(from, to, msg.msg);
+
+        //TODO shit from 2D needed here??
     }
 
     addProcess(pid, info) {
@@ -119,7 +162,12 @@ export default class {
     }
 
     removeInvisibleLink(process) {
+        let grouping_processes = this.grouping_processes[process.node];
 
+        if (grouping_processes) {
+            delete grouping_processes.invisible_links[process.id];
+            this.graph.removeInvisibleLink(grouping_processes, process);
+        }
     }
 
     removeProcess(pid) {
@@ -139,22 +187,25 @@ export default class {
                 delete this.processes[linked_process.id];
             }
         });
-        this.graph.removeProcess(process); //TODO
+        this.graph.removeProcess(process);
         delete this.processes[pid];
     }
 
     msgTracePID(id) {
-        // this.channel.push('msg_trace', id); //TODO
+        console.log('tracing: ', id);
+        this.channel.push('msg_trace', id); 
     }
 
     stopMsgTraceAll(node) {
-        console.log('stop msg tracing (TODO)');
-        // this.channel.push('stop_msg_trace_all', node);
-        // this.graph.stopMsgTraceAll();
-        // this.graph.update(false);
+        console.log('stop msg tracing');
+        this.channel.push('stop_msg_trace_all', node);
+        this.graph.stopMsgTraceAll();
+        this.graph.update(false);
     }
-
+    // TODO probs remove this shit no worky
     collapseNode(pid) {
+        // not gonna work with menu button component
+        // dont implement or use graph onclick instead..
         console.log('nothing yet');
     }
 }

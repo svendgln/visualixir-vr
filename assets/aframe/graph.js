@@ -65,12 +65,54 @@ export default class {
         }
     }
 
+    removeLink(source, target) {
+        let id = this.link_id(source, target);
+        delete this.links[id];
+    }
+
     addInvisibleLink(source, target) {
         if (source && target) {
             let link = { source: source, target: target },
                 id = this.link_id(source, target);
             this.invisible_links[id] = link;
         }
+    }
+
+    removeInvisibleLink(source, target) {
+        if (source && target) {
+            let id = this.link_id(source, target);
+            delete this.invisible_links[id];
+        }
+    }
+
+    removeProcess(process) {
+        d3.values(process.links).forEach(linked_process => {
+            delete this.links[this.link_id(process, linked_process)];
+        });
+
+        let grouping_process = this.cluster_view.grouping_processes[process.node];
+        if (grouping_process) {
+            this.removeInvisibleLink(process, grouping_process);
+        }
+
+        if (process == grouping_process) {
+            d3.keys(process.invisible_links).forEach(other_process => {
+                this.removeInvisibleLink(process, other_process);
+            });
+        }
+    }
+
+    msgTraceProcess(d, node) {
+        console.log('traceProcess: ', d);
+        d.msg_traced = true;
+        this.cluster_view.msgTracePID(d.id);
+        // TODO add traced component to node..
+    }
+
+    stopMsgTraceAll() {
+        d3.values(this.cluster_view.processes).forEach(pid => {
+            pid.msg_traced = false;
+        });
     }
 
     update(force_restart) {
@@ -173,15 +215,44 @@ export default class {
                         //console.log(`#${color.getHexString()}`);
                         return `shader: standard; color: #${color.getHexString()};`;
                     })
-                    //.on('click', function (d, i) {
-                    //    console.log('clicked graph node');
-                    //    console.log(this.__data__, d);
-                        //NO ON CLICK.. -> DELETE IG LOL
-                        //set menubutton component with nodeInfo callback
-                        //data can be accessed through event.target
-                    //})
+                    .on('click', function (d, i) {
+                        //if (d3.event.defaultPrevented) return;
+                        //    console.log('clicked graph node CALLBACK');
+                        //    console.log(this.__data__, d);
+                        let mc = window.app.menuController;
+                        let activeMenu = mc.tabIDs[mc.activeTab];
+                        let visible = mc.visible;
+                        console.log(activeMenu, visible);
+
+                        if (!visible) return;
+                        switch (activeMenu) {
+                            case "#node-info":
+                                console.log(this);
+                                mc.nodeInfo.displayNodeInfo(this.__data__);
+                                console.log('display from graph');
+                                break;
+                            case "#logger-trace":
+                                // add to selected nodes..?
+                                //d: event, this: dom el? TODO check tf this is lol
+                                self.msgTraceProcess(this.__data__, d.target);
+                                break;
+                            default:
+                                console.log('das ni just precies');
+                                break;
+                        }
+
+
+                        // d is click event?
+                        // NO ON CLICK.. -> DELETE IG LOL
+                        // set menubutton component with nodeInfo callback
+                        // data can be accessed through event.target
+                    })
+                    // .attr('raycastable', function (d, i) {
+                    //     return '';
+                    // })
+                    //no op function but still highlights nodes
                     .attr('menu-button', function (d, i) {
-                        return 'name: nodeInfo; offset: 0.1';
+                        return 'name: noOp; offset: 0.1';
                     })
                     // add node information text
                     .each(function (d, i) {
@@ -259,6 +330,7 @@ export default class {
             let node = nodeList[i];
             if (node) {
                 let d = node.__data__;
+                // TODO change graph pos to 0,0
                 // +5 to compensate for relative position of graph, can probably get world pos
                 let dist = Math.sqrt(((d.x + 5) - camPos.x) ** 2 + ((d.y + 5) - camPos.z) ** 2);
                 // console.log(d.x, d.y, camPos.x, camPos.z, dist)
@@ -268,7 +340,7 @@ export default class {
 
                 let text = node.firstChild;
                 //add showAllNodes boolean controlled by menu button idk..
-                if (dist < 3) {
+                if (dist < 3) { // TODO change dist in menu?? + - buttons or smth
                     // console.log(node);
                     text.setAttribute('visible', true);
                     //add user height to position

@@ -20,23 +20,31 @@ function nodeClick(target, args) {
     }
 }
 
+function noOp(target, args) {
+    console.log('no op function');
+    return null;
+}
+
 //move to file
 function nodeInfo(target, args) {
     const data = target.__data__;
-    console.log('Node Info Command: ', data);
+    //console.log('Node Info TARGET: ', target);
+    console.log('Node Info Command Data: ', data);
+    //console.log('TEST', data.children);
     window.app.menuController.nodeInfo.displayNodeInfo(data);
 }
-
+// use D3 shit for this
 function collapseNode(target, args) {
     const pid = args[0];
     console.log('collapse',pid);
+    console.log('target = ', target);
     if (pid) {
         window.app.clusterView.collapseNode(pid);
     } else {
         console.log('no active node or node disconnected');
     }
 }
-
+// maybe rename to clickable or idk
 AFRAME.registerSystem('menu-button', {
 
     init: function () {
@@ -47,11 +55,13 @@ AFRAME.registerSystem('menu-button', {
             document.test();
         }
         //temp
+        //TODO change to just map.set idk
         this.addCommand('testRemove', document.test2);
         this.addCommand('test', test);
         this.addCommand('nodeClick', nodeClick);
-        this.addCommand('nodeInfo', nodeInfo);
+        //this.addCommand('nodeInfo', nodeInfo);
         this.addCommand('collapseNode', collapseNode);
+        this.addCommand('noOp', noOp);
         this.listCommands();
     },
 
@@ -87,7 +97,7 @@ AFRAME.registerComponent('menu-button', {
      */
     schema: {
         offset: { type: 'number', default: 0.5 },
-        name: { type: 'string', default: '' },
+        name: { type: 'string', default: 'noOp' },
         args: { type: 'array', default: [] },
         clickable: { type: 'boolean', default: true } //why lol
     },

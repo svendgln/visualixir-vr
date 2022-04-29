@@ -8,27 +8,16 @@ AFRAME.registerComponent('menu', {
         //let t = new Menu();
         window.app.menuController.nodeMenu = new Menu();
         //load menuController here? idk consistency
+        const scene = document.querySelector('a-scene');
 
-        document.querySelector('a-scene').addEventListener('enter-vr', function () {
+        scene.addEventListener('enter-vr', function () {
             console.log("ENTERED VR");
-            window.app.menuController.initVR()
-            // attach menu to controller
-
-            // moved to menuController
-
-            // let entity = document.querySelector('#menu');
-            // let newParent = document.querySelector('#controllerRight');
-            // //entity.flushToDOM(); //not needed? dafuq
-            // let copy = entity.cloneNode(true);
-            // newParent.appendChild(copy);
-            // entity.parentNode.removeChild(entity);
-            // //resize
-            // copy.setAttribute('scale', '0.5 0.5 0.5');
-            // copy.setAttribute('rotation', '-30 0 0');
-            // copy.setAttribute('position', '0 0.2 -0.2');
+            window.app.menuController.initVR();
         });
 
-
+        // scene.addEventListener('exit-vr', function () {
+        //     window.app.menuController.exitVR();
+        // })
 
     }
 });
