@@ -237,7 +237,6 @@ export default class {
                                 self.msgTraceProcess(this.__data__, d.target);
                                 break;
                             default:
-                                console.log('das ni just precies');
                                 break;
                         }
 

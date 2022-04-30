@@ -1,4 +1,5 @@
 import cfg from '../config';
+import { mod } from '../util'
 // logs status messages
 // TODO rename other menu tabs to ..-tab
 AFRAME.registerComponent('logger-tab', {
@@ -14,6 +15,7 @@ AFRAME.registerComponent('logger-tab', {
 AFRAME.registerComponent('tracer-tab', {
     dependencies: ['geometry'],
     init: function () {
+        console.log('LOADED TRAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACER');
         const dims = document.querySelector('a-scene').getBoundingClientRect();
         const el = document.querySelector('#logger-trace');
         window.app.Tracer = new Tracer(el);
@@ -25,25 +27,110 @@ AFRAME.registerComponent('tracer-tab', {
 
 export class MsgLogger {
     constructor(container) {
+        this.container = container;
         this.maxMessages = cfg.maxMessages;
-        this.messages = new Array();
-        this.window = 0;
-        this.wSize = 3;
+        this.messages = new Array(this.maxMessages); //circular array
+        this.last = -1; //idx of last added msg
+        this.window = -1; // start of visible window
+        this.scrolling = false;
+
         // sliding window type shit
         // use window and size to slice msgs from array
+
+        // TODO
+        this.containerHeight = container.getAttribute('geometry').height;
+        this.containerWidth = container.getAttribute('geometry').width;
+        // msg config
+        this.msgPadding = 0.02;
+        this.msgHeight = cfg.msgHeight;
+        this.msgWidth = this.containerWidth - this.msgPadding;
+        // # of messages displayed
+        this.wSize = Math.floor(this.containerHeight / (this.msgHeight + this.msgPadding));
+        console.log(this.wSize);
+    }
+
+    scrollUp() {
+        // cant sroll up when nothing added yet or window at top
+        if (this.last < 0 || this.window == this.last) {
+            console.log('at top');
+            return;
+        }
+        this.window = mod((this.window + 1), this.messages.length);
+        if (this.window == this.last) {
+            // back to top
+            this.scrolling = false;
+        }
+        
+        this.render();
+    }
+
+    scrollDown() {
+        if (this.last < 0) return;
+        // window is at bottom
+        if (mod((this.window - this.wSize), this.messages.length) == this.last
+            || this.messages[mod((this.window - 1), this.messages.length)] == undefined) {
+            console.log('at end');
+            return;
+        }
+        this.window = mod((this.window - 1), this.messages.length);
+        this.scrolling = true;
+
+        this.render();
     }
 
     addMsg(msg) {
-        console.log(msg);
-        //this.messages.unshift(msg);
-        // do some rerender shit
+        this.last += 1;
+        if (this.last == this.messages.length) this.last = 0;
+        this.messages[this.last] = msg; // will overide oldest msg if full
+        // check if scrolling.. add explanation lol TODO
+      
+        if (!this.scrolling || (this.scrolling && (this.last-1 == mod((this.window - this.wSize), this.messages.length)))) {
+            console.log('moving window');
+            this.window = mod((this.window + 1), this.messages.length);
+        } // else dont move -> scrolling
+
+        // rerender
+        this.render();
+    }
+    // TODO change window shit for scrolling..
+    // 
+    getWindow() {
+        const start = this.window;
+        let res = new Array(this.wSize);
+        // cant use slice here, index wraps around
+        for (let i = 0; i < this.wSize; i++) {
+            let idx = mod(start - i, this.messages.length);
+            res[i] = this.messages[idx];
+        }
+        return res;
     }
 
     render() {
+        const xOffset = -this.msgWidth / 2 + this.msgPadding;
         // add messages in window to container
+        // slice array, for each if exists add to tab..
+        d3.select('a-scene').select('#' + this.container.id)
+            .selectAll('a-entity')
+            .data(this.getWindow())
+            .join('a-entity')
+            .filter(function (d, i) {
+                return d != undefined;
+            })
+            .attr('geometry', (d, i) => {
+                return `primitive: plane; width: ${this.msgWidth}; height: ${this.msgHeight}`;
+            })
+            .attr('position', (d, i) => {
+                let first = (this.containerHeight / 2) - (this.msgHeight / 2) - this.msgPadding;
+                let offset = (this.msgHeight + this.msgPadding) * -i;
+                return `0 ${first + offset} 0.01`;
+            })
+            .attr('material', (d, i) => {
+                return 'shader: flat; color: red'; //TODO temp color
+            })// undefined test also probs
+            .attr('text', (d, i) => { // test wrapCount and width..
+                return `value: ${d}; align: left; color: blue; anchor: align; xOffset: ${xOffset}`;
+            });
     }
-
-    // probs do some scroll shit
 }
 // log one / 2
 export class Logger extends MsgLogger {
@@ -56,10 +143,14 @@ export class Logger extends MsgLogger {
             'unlink': 'unlinked from'
         })
     );
-    constructor (container) {
+    constructor(container) {
         super(container);
-        
+
     }
+
+    // render() {
+    //     super.render();
+    // }
 
     logOne(process, type) {
         const name = process.name;
@@ -75,13 +166,15 @@ export class Logger extends MsgLogger {
 // log 2
 export class Tracer extends MsgLogger {
     // selected nodes
-    constructor (container) {
+    constructor(container) {
         super(container);
         this.selected = new Map(); // idk map maybe..
     }
 
     logMessage(from, to, msg) {
+        //console.log('MSG', from, to, msg);
         console.log(from.name + '->' + to.name + ': ' + msg);
+        super.addMsg(from.name + '->' + to.name + ': ' + msg);
     }
     // this shite even needed?
     // dont need to store traced nodes here..

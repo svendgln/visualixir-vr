@@ -9,5 +9,9 @@ function offsetColor(color, offset = 0.5) {
         return new THREE.Color(0xff0000)
     }
 }
+// returns the positive modulo //TODO used? :p
+function mod(n, m) {
+    return ((n % m) + m) % m;
+}
 
-export { offsetColor };
+export { offsetColor, mod };

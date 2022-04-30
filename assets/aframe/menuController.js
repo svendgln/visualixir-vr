@@ -35,7 +35,10 @@ export default class {
 
     // attaches menu tabs to controllers
     initVR() {
+        console.log('INIT VR');
         this.isVR = true;
+        // reset TODO test lol
+        window.app.menuController.nodeMenu.update([]);
         this.tabIDs.forEach(id => {
             let el = document.querySelector(id);
             let newParent = document.querySelector('#controllerRight');

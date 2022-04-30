@@ -49,15 +49,15 @@ export default class {
     spawn(msg) {
         $.each(msg, (pid, info) => {
             this.addProcess(pid, info);
-            // might need null check idk
-            window.app.Logger.logOne(this.processes[pid], 'spawn');
+            // might need null check idk TODO yes it does lol
+            window.app.Logger?.logOne(this.processes[pid], 'spawn');
         });
         this.graph.update(true);
     }
 
     exit(msg) {
         if (this.processes[msg.pid]) {
-            window.app.Logger.logOne(this.processes[msg.pid], 'exit');
+            window.app.Logger?.logOne(this.processes[msg.pid], 'exit');
             this.removeProcess(msg.pid);
             this.graph.update(true);
         }
@@ -73,7 +73,7 @@ export default class {
 
         if (from && to) {
             this.addLink(from, to);
-            window.app.Logger.logTwo(from, to, 'link');
+            window.app.Logger?.logTwo(from, to, 'link');
             // from was unlinked so had an invisible link
             if (!msg.from_was_unlinked)
                 this.removeInvisibleLink(from);
@@ -91,7 +91,7 @@ export default class {
 
         if (from && to) {
             this.graph.removeLink(from, to); //TODO
-            window.app.Logger.logTwo(from, to, 'unlink');
+            window.app.Logger?.logTwo(from, to, 'unlink');
             // from now has no links, add invisible link
             if (!msg.from_any_links)
                 this.addInvisibleLink(from);
@@ -108,7 +108,7 @@ export default class {
         let from = this.processes[msg.from_pid],
             to = this.processes[msg.to_pid]; // why tf different here lol
 
-        window.app.Tracer.logMessage(from, to, msg.msg);
+        window.app.Tracer?.logMessage(from, to, msg.msg);
 
         //TODO shit from 2D needed here??
     }
@@ -193,7 +193,7 @@ export default class {
 
     msgTracePID(id) {
         console.log('tracing: ', id);
-        this.channel.push('msg_trace', id); 
+        this.channel.push('msg_trace', id);
     }
 
     stopMsgTraceAll(node) {

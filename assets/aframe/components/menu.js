@@ -40,7 +40,7 @@ export default class Menu {
         this.nodeWidth = this.containerWidth - this.nodePadding;
         this.nodeHeight = 0.2;
         this.maxNodes = Math.floor(this.containerHeight / (this.nodeHeight + this.nodePadding));
-        console.log(
+        console.log( //TODO maxNodes is unused lol
             'container height: ', this.containerHeight,
             '\nnode height+padding: ', this.nodeHeight + this.nodePadding,
             '\nmax #nodes -> ', this.maxNodes
@@ -65,34 +65,48 @@ export default class Menu {
         d3.select('a-scene').select('#menu-nodes')
             .selectAll('a-entity')
             .data(nodes)
-            .join('a-entity')
-            .attr('geometry', (d, i) => {
-                return `primitive: plane; width: ${this.nodeWidth}; height: ${this.nodeHeight};`
-            })
-            .attr('position', (d, i) => {
-                console.log((this.containerHeight / 2) - (this.nodeHeight / 2));
-                let first = (this.containerHeight / 2) - (this.nodeHeight / 2) - this.nodePadding;
-                let offset = (this.nodeHeight + this.nodePadding) * -i;
-                return `0 ${first + offset} 0.01`
-            })
-            .attr('material', (d, i) => {
-                return 'shader: flat; color: red'
-            })
-            .attr('text', (d, i) => {
-                //??split node string at @ idk
-                return `value: ${d}; align: center; wrapCount: 20`
-            })
-            .attr('menu-button', (d, i) => `name: nodeClick; args: ${d}; clickable: true`)
-            //.attr('raycastable', (d, i) => '')
-            .each(function (d, i) {
-                self.nodeColors.set(d, cfg.COLORS[i % cfg.COLORS.length]);
-                self.appendColorLegend(this, d);
-                // update DOM with correct attribute values
-                // needed?
-                this.flushToDOM();
-                console.log('flushed: ', this);
-                console.log(d);
-            });
+            .join(
+                enter => {
+                    enter
+                        .append('a-entity')
+                        .attr('geometry', (d, i) => {
+                            console.log('HERE HERE HERE');
+                            return `primitive: plane; width: ${this.nodeWidth}; height: ${this.nodeHeight};`
+                        })
+                        .attr('position', (d, i) => {
+                            console.log((this.containerHeight / 2) - (this.nodeHeight / 2));
+                            let first = (this.containerHeight / 2) - (this.nodeHeight / 2) - this.nodePadding;
+                            let offset = (this.nodeHeight + this.nodePadding) * -i;
+                            return `0 ${first + offset} 0.01`
+                        })
+                        .attr('material', (d, i) => {
+                            return 'shader: flat; color: red'
+                        })
+                        .attr('text', (d, i) => {
+                            //??split node string at @ idk
+                            return `value: ${d}; align: center; wrapCount: 20`
+                        })
+                        .attr('menu-button', (d, i) => `name: nodeClick; args: ${d}; clickable: true`)
+                        //.attr('raycastable', (d, i) => '')
+                        .each(function (d, i) {
+                            self.nodeColors.set(d, cfg.COLORS[i % cfg.COLORS.length]);
+                            self.appendColorLegend(this, d);
+                            // update DOM with correct attribute values
+                            // TODO needed?
+                            this.flushToDOM();
+                            console.log('flushed: ', this);
+                            console.log(d);
+                        });
+                },
+                update => {
+                    console.log('UPDATEDARAUPDATAUPDATEDAUPTEUPDA');
+                    return update;
+                },
+                exit => {
+                    console.log('ADADADADADADADADADADADADADADADADA');
+                    exit.remove();
+                }
+            );
     }
 
     visualizeNode(node) {
@@ -119,7 +133,7 @@ export default class Menu {
         Object.entries(values).forEach(([key, color], i) => {
             console.log('ADDED legend button', key);
             let el = document.createElement('a-entity');
-            el.setAttribute('position', `${offsetX + this.nodePadding} ${offsetY - radius -(i*radius*2)} 0.01`);
+            el.setAttribute('position', `${offsetX + this.nodePadding} ${offsetY - radius - (i * radius * 2)} 0.01`);
             el.setAttribute('geometry', `primitive: cylinder; height: 0.01; radius: ${radius}`);
             el.setAttribute('material', `shader: flat; color: #${color.getHexString()}`); //probs change
             el.setAttribute('rotation', '90 0 0');

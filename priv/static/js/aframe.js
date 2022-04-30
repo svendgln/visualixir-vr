@@ -192,7 +192,8 @@ var AframeApp = /*#__PURE__*/_createClass(function AframeApp() {
 
   //this.controls = new Controls(); //callbacks for keyboard presses and vr controllers
   //this.menu = new Menu();
-  this.clusterView = new _cluster_view["default"]('NOT USED'); //this.menu = new Menu();
+  this.clusterView = new _cluster_view["default"]('NOT USED'); // TODO it is used ig lol
+  //this.menu = new Menu();
 
   this.menuController = new _menuController["default"]();
 }); // on document load
@@ -308,10 +309,12 @@ var _default = /*#__PURE__*/function () {
       var _this4 = this;
 
       $.each(msg, function (pid, info) {
-        _this4.addProcess(pid, info); // might need null check idk
+        var _window$app$Logger;
+
+        _this4.addProcess(pid, info); // might need null check idk TODO yes it does lol
 
 
-        window.app.Logger.logOne(_this4.processes[pid], 'spawn');
+        (_window$app$Logger = window.app.Logger) === null || _window$app$Logger === void 0 ? void 0 : _window$app$Logger.logOne(_this4.processes[pid], 'spawn');
       });
       this.graph.update(true);
     }
@@ -319,7 +322,9 @@ var _default = /*#__PURE__*/function () {
     key: "exit",
     value: function exit(msg) {
       if (this.processes[msg.pid]) {
-        window.app.Logger.logOne(this.processes[msg.pid], 'exit');
+        var _window$app$Logger2;
+
+        (_window$app$Logger2 = window.app.Logger) === null || _window$app$Logger2 === void 0 ? void 0 : _window$app$Logger2.logOne(this.processes[msg.pid], 'exit');
         this.removeProcess(msg.pid);
         this.graph.update(true);
       }
@@ -336,8 +341,10 @@ var _default = /*#__PURE__*/function () {
           to = this.processes[msg.to];
 
       if (from && to) {
+        var _window$app$Logger3;
+
         this.addLink(from, to);
-        window.app.Logger.logTwo(from, to, 'link'); // from was unlinked so had an invisible link
+        (_window$app$Logger3 = window.app.Logger) === null || _window$app$Logger3 === void 0 ? void 0 : _window$app$Logger3.logTwo(from, to, 'link'); // from was unlinked so had an invisible link
 
         if (!msg.from_was_unlinked) this.removeInvisibleLink(from);
         if (!msg.to_was_unlinked) this.removeInvisibleLink(to);
@@ -351,9 +358,11 @@ var _default = /*#__PURE__*/function () {
           to = this.processes[msg.to];
 
       if (from && to) {
+        var _window$app$Logger4;
+
         this.graph.removeLink(from, to); //TODO
 
-        window.app.Logger.logTwo(from, to, 'unlink'); // from now has no links, add invisible link
+        (_window$app$Logger4 = window.app.Logger) === null || _window$app$Logger4 === void 0 ? void 0 : _window$app$Logger4.logTwo(from, to, 'unlink'); // from now has no links, add invisible link
 
         if (!msg.from_any_links) this.addInvisibleLink(from);
         if (!msg.to_any_links) this.addInvisibleLink(to);
@@ -363,11 +372,13 @@ var _default = /*#__PURE__*/function () {
   }, {
     key: "msg",
     value: function msg(_msg) {
+      var _window$app$Tracer;
+
       // incoming msgs from traced processes
       var from = this.processes[_msg.from_pid],
           to = this.processes[_msg.to_pid]; // why tf different here lol
 
-      window.app.Tracer.logMessage(from, to, _msg.msg); //TODO shit from 2D needed here??
+      (_window$app$Tracer = window.app.Tracer) === null || _window$app$Tracer === void 0 ? void 0 : _window$app$Tracer.logMessage(from, to, _msg.msg); //TODO shit from 2D needed here??
     }
   }, {
     key: "addProcess",
@@ -604,6 +615,17 @@ var Controls = /*#__PURE__*/function () {
     value: function toggleMenu() {
       window.app.menuController.toggleMenu();
     }
+  }, {
+    key: "scrollUp",
+    value: function scrollUp() {
+      // check active window first TODO
+      window.app.Tracer.scrollUp();
+    }
+  }, {
+    key: "scrollDown",
+    value: function scrollDown() {
+      window.app.Tracer.scrollDown();
+    }
   }]);
 
   return Controls;
@@ -611,6 +633,7 @@ var Controls = /*#__PURE__*/function () {
 
 exports["default"] = Controls;
 window.addEventListener('keydown', function (e) {
+  //console.log(e.key);
   switch (e.key) {
     case 'm':
       Controls.toggleMenu();
@@ -618,6 +641,14 @@ window.addEventListener('keydown', function (e) {
 
     case 'r':
       Controls.cycleMenu();
+      break;
+
+    case 'i':
+      Controls.scrollUp();
+      break;
+
+    case 'k':
+      Controls.scrollDown();
       break;
 
     default:
@@ -707,10 +738,15 @@ AFRAME.registerComponent('custom-controls', {
       // TODO just yeet this.axis = evt...
       var axis = evt.detail.axis;
       _this.axis = axis;
+    });
+    controllerRight.addEventListener('axismove', function (evt) {
+      var axis = evt.detail.axis;
+      console.log(axis);
     }); // right trackpad: use click and axis location to create arrow key functionality?.. for.. something..
     // can be different depending on active menu tab
   },
   tick: function tick(time, timeDelta) {
+    //console.log(this.axis); // TODO test if axis resets to 0,0 on release, then return here ig
     var vecX = this.vecX;
     var vecZ = this.vecZ;
     var pos = this.data.cameraRig.object3D.position; // camera rotation quaternion
@@ -816,7 +852,13 @@ exports.Tracer = exports.MsgLogger = exports.Logger = void 0;
 
 var _config = _interopRequireDefault(require("../config"));
 
+var _util = require("../util");
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
+
+function _get() { if (typeof Reflect !== "undefined" && Reflect.get) { _get = Reflect.get; } else { _get = function _get(target, property, receiver) { var base = _superPropBase(target, property); if (!base) return; var desc = Object.getOwnPropertyDescriptor(base, property); if (desc.get) { return desc.get.call(arguments.length < 3 ? target : receiver); } return desc.value; }; } return _get.apply(this, arguments); }
+
+function _superPropBase(object, property) { while (!Object.prototype.hasOwnProperty.call(object, property)) { object = _getPrototypeOf(object); if (object === null) break; } return object; }
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); Object.defineProperty(subClass, "prototype", { writable: false }); if (superClass) _setPrototypeOf(subClass, superClass); }
 
@@ -855,6 +897,7 @@ AFRAME.registerComponent('logger-tab', {
 AFRAME.registerComponent('tracer-tab', {
   dependencies: ['geometry'],
   init: function init() {
+    console.log('LOADED TRAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACER');
     var dims = document.querySelector('a-scene').getBoundingClientRect();
     var el = document.querySelector('#logger-trace');
     window.app.Tracer = new Tracer(el);
@@ -866,24 +909,117 @@ var MsgLogger = /*#__PURE__*/function () {
   function MsgLogger(container) {
     _classCallCheck(this, MsgLogger);
 
+    this.container = container;
     this.maxMessages = _config["default"].maxMessages;
-    this.messages = new Array();
-    this.window = 0;
-    this.wSize = 3; // sliding window type shit
+    this.messages = new Array(this.maxMessages); //circular array
+
+    this.last = -1; //idx of last added msg
+
+    this.window = -1; // start of visible window
+
+    this.scrolling = false; // sliding window type shit
     // use window and size to slice msgs from array
+    // TODO
+
+    this.containerHeight = container.getAttribute('geometry').height;
+    this.containerWidth = container.getAttribute('geometry').width; // msg config
+
+    this.msgPadding = 0.02;
+    this.msgHeight = _config["default"].msgHeight;
+    this.msgWidth = this.containerWidth - this.msgPadding; // # of messages displayed
+
+    this.wSize = Math.floor(this.containerHeight / (this.msgHeight + this.msgPadding));
+    console.log(this.wSize);
   }
 
   _createClass(MsgLogger, [{
+    key: "scrollUp",
+    value: function scrollUp() {
+      // cant sroll up when nothing added yet or window at top
+      if (this.last < 0 || this.window == this.last) {
+        console.log('at top');
+        return;
+      }
+
+      this.window = (0, _util.mod)(this.window + 1, this.messages.length);
+
+      if (this.window == this.last) {
+        // back to top
+        this.scrolling = false;
+      }
+
+      this.render();
+    }
+  }, {
+    key: "scrollDown",
+    value: function scrollDown() {
+      if (this.last < 0) return; // window is at bottom
+
+      if ((0, _util.mod)(this.window - this.wSize, this.messages.length) == this.last || this.messages[(0, _util.mod)(this.window - 1, this.messages.length)] == undefined) {
+        console.log('at end');
+        return;
+      }
+
+      this.window = (0, _util.mod)(this.window - 1, this.messages.length);
+      this.scrolling = true;
+      this.render();
+    }
+  }, {
     key: "addMsg",
     value: function addMsg(msg) {
-      console.log(msg); //this.messages.unshift(msg);
-      // do some rerender shit
+      this.last += 1;
+      if (this.last == this.messages.length) this.last = 0;
+      this.messages[this.last] = msg; // will overide oldest msg if full
+      // check if scrolling.. add explanation lol TODO
+
+      if (!this.scrolling || this.scrolling && this.last - 1 == (0, _util.mod)(this.window - this.wSize, this.messages.length)) {
+        console.log('moving window');
+        this.window = (0, _util.mod)(this.window + 1, this.messages.length);
+      } // else dont move -> scrolling
+      // rerender
+
+
+      this.render();
+    } // TODO change window shit for scrolling..
+    // 
+
+  }, {
+    key: "getWindow",
+    value: function getWindow() {
+      var start = this.window;
+      var res = new Array(this.wSize); // cant use slice here, index wraps around
+
+      for (var i = 0; i < this.wSize; i++) {
+        var idx = (0, _util.mod)(start - i, this.messages.length);
+        res[i] = this.messages[idx];
+      }
+
+      return res;
     }
   }, {
     key: "render",
-    value: function render() {// add messages in window to container
-    } // probs do some scroll shit
+    value: function render() {
+      var _this = this;
 
+      var xOffset = -this.msgWidth / 2 + this.msgPadding; // add messages in window to container
+      // slice array, for each if exists add to tab..
+
+      d3.select('a-scene').select('#' + this.container.id).selectAll('a-entity').data(this.getWindow()).join('a-entity').filter(function (d, i) {
+        return d != undefined;
+      }).attr('geometry', function (d, i) {
+        return "primitive: plane; width: ".concat(_this.msgWidth, "; height: ").concat(_this.msgHeight);
+      }).attr('position', function (d, i) {
+        var first = _this.containerHeight / 2 - _this.msgHeight / 2 - _this.msgPadding;
+        var offset = (_this.msgHeight + _this.msgPadding) * -i;
+        return "0 ".concat(first + offset, " 0.01");
+      }).attr('material', function (d, i) {
+        return 'shader: flat; color: red'; //TODO temp color
+      }) // undefined test also probs
+      .attr('text', function (d, i) {
+        // test wrapCount and width..
+        return "value: ".concat(d, "; align: left; color: blue; anchor: align; xOffset: ").concat(xOffset);
+      });
+    }
   }]);
 
   return MsgLogger;
@@ -902,7 +1038,10 @@ var Logger = /*#__PURE__*/function (_MsgLogger) {
     _classCallCheck(this, Logger);
 
     return _super.call(this, container);
-  }
+  } // render() {
+  //     super.render();
+  // }
+
 
   _createClass(Logger, [{
     key: "logOne",
@@ -939,20 +1078,23 @@ var Tracer = /*#__PURE__*/function (_MsgLogger2) {
 
   // selected nodes
   function Tracer(container) {
-    var _this;
+    var _this2;
 
     _classCallCheck(this, Tracer);
 
-    _this = _super2.call(this, container);
-    _this.selected = new Map(); // idk map maybe..
+    _this2 = _super2.call(this, container);
+    _this2.selected = new Map(); // idk map maybe..
 
-    return _this;
+    return _this2;
   }
 
   _createClass(Tracer, [{
     key: "logMessage",
     value: function logMessage(from, to, msg) {
+      //console.log('MSG', from, to, msg);
       console.log(from.name + '->' + to.name + ': ' + msg);
+
+      _get(_getPrototypeOf(Tracer.prototype), "addMsg", this).call(this, from.name + '->' + to.name + ': ' + msg);
     } // this shite even needed?
     // dont need to store traced nodes here..
     // selecting done in graph onclick
@@ -1044,7 +1186,8 @@ var Menu = /*#__PURE__*/function () {
     this.nodeWidth = this.containerWidth - this.nodePadding;
     this.nodeHeight = 0.2;
     this.maxNodes = Math.floor(this.containerHeight / (this.nodeHeight + this.nodePadding));
-    console.log('container height: ', this.containerHeight, '\nnode height+padding: ', this.nodeHeight + this.nodePadding, '\nmax #nodes -> ', this.maxNodes);
+    console.log( //TODO maxNodes is unused lol
+    'container height: ', this.containerHeight, '\nnode height+padding: ', this.nodeHeight + this.nodePadding, '\nmax #nodes -> ', this.maxNodes);
 
     var updateNodes = function updateNodes(msg) {
       //update this.nodes here idk, for scroll shit.. eventually..
@@ -1065,29 +1208,38 @@ var Menu = /*#__PURE__*/function () {
       var l = nodes.length;
       var self = this; //d3
 
-      d3.select('a-scene').select('#menu-nodes').selectAll('a-entity').data(nodes).join('a-entity').attr('geometry', function (d, i) {
-        return "primitive: plane; width: ".concat(_this2.nodeWidth, "; height: ").concat(_this2.nodeHeight, ";");
-      }).attr('position', function (d, i) {
-        console.log(_this2.containerHeight / 2 - _this2.nodeHeight / 2);
-        var first = _this2.containerHeight / 2 - _this2.nodeHeight / 2 - _this2.nodePadding;
-        var offset = (_this2.nodeHeight + _this2.nodePadding) * -i;
-        return "0 ".concat(first + offset, " 0.01");
-      }).attr('material', function (d, i) {
-        return 'shader: flat; color: red';
-      }).attr('text', function (d, i) {
-        //??split node string at @ idk
-        return "value: ".concat(d, "; align: center; wrapCount: 20");
-      }).attr('menu-button', function (d, i) {
-        return "name: nodeClick; args: ".concat(d, "; clickable: true");
-      }) //.attr('raycastable', (d, i) => '')
-      .each(function (d, i) {
-        self.nodeColors.set(d, _config["default"].COLORS[i % _config["default"].COLORS.length]);
-        self.appendColorLegend(this, d); // update DOM with correct attribute values
-        // needed?
+      d3.select('a-scene').select('#menu-nodes').selectAll('a-entity').data(nodes).join(function (enter) {
+        enter.append('a-entity').attr('geometry', function (d, i) {
+          console.log('HERE HERE HERE');
+          return "primitive: plane; width: ".concat(_this2.nodeWidth, "; height: ").concat(_this2.nodeHeight, ";");
+        }).attr('position', function (d, i) {
+          console.log(_this2.containerHeight / 2 - _this2.nodeHeight / 2);
+          var first = _this2.containerHeight / 2 - _this2.nodeHeight / 2 - _this2.nodePadding;
+          var offset = (_this2.nodeHeight + _this2.nodePadding) * -i;
+          return "0 ".concat(first + offset, " 0.01");
+        }).attr('material', function (d, i) {
+          return 'shader: flat; color: red';
+        }).attr('text', function (d, i) {
+          //??split node string at @ idk
+          return "value: ".concat(d, "; align: center; wrapCount: 20");
+        }).attr('menu-button', function (d, i) {
+          return "name: nodeClick; args: ".concat(d, "; clickable: true");
+        }) //.attr('raycastable', (d, i) => '')
+        .each(function (d, i) {
+          self.nodeColors.set(d, _config["default"].COLORS[i % _config["default"].COLORS.length]);
+          self.appendColorLegend(this, d); // update DOM with correct attribute values
+          // TODO needed?
 
-        this.flushToDOM();
-        console.log('flushed: ', this);
-        console.log(d);
+          this.flushToDOM();
+          console.log('flushed: ', this);
+          console.log(d);
+        });
+      }, function (update) {
+        console.log('UPDATEDARAUPDATAUPDATEDAUPTEUPDA');
+        return update;
+      }, function (exit) {
+        console.log('ADADADADADADADADADADADADADADADADA');
+        exit.remove();
       });
     }
   }, {
@@ -1450,7 +1602,9 @@ var _default = {
   supervisorOffset: 0.3,
   portOffset: -0.3,
   linkColor: 0x21a33b,
-  maxMessages: 10
+  maxMessages: 10,
+  msgHeight: 0.1 //test
+
 };
 exports["default"] = _default;
 });
@@ -1751,7 +1905,6 @@ var _default = /*#__PURE__*/function () {
               break;
 
             default:
-              console.log('das ni just precies');
               break;
           } // d is click event?
           // NO ON CLICK.. -> DELETE IG LOL
@@ -1878,7 +2031,10 @@ var _default = /*#__PURE__*/function () {
   }, {
     key: "initVR",
     value: function initVR() {
-      this.isVR = true;
+      console.log('INIT VR');
+      this.isVR = true; // reset TODO test lol
+
+      window.app.menuController.nodeMenu.update([]);
       this.tabIDs.forEach(function (id) {
         var el = document.querySelector(id);
         var newParent = document.querySelector('#controllerRight');
@@ -2229,6 +2385,7 @@ exports["default"] = _default;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.mod = mod;
 exports.offsetColor = offsetColor;
 
 function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
@@ -2246,6 +2403,11 @@ function offsetColor(color) {
   } else {
     return new THREE.Color(0xff0000);
   }
+} // returns the positive modulo //TODO used? :p
+
+
+function mod(n, m) {
+  return (n % m + m) % m;
 }
 });
 

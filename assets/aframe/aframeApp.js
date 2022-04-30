@@ -28,7 +28,7 @@ class AframeApp {
     constructor() {
         //this.controls = new Controls(); //callbacks for keyboard presses and vr controllers
         //this.menu = new Menu();
-        this.clusterView = new ClusterView('NOT USED');
+        this.clusterView = new ClusterView('NOT USED');// TODO it is used ig lol
         //this.menu = new Menu();
         this.menuController = new menuController();
     }

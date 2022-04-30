@@ -7,15 +7,31 @@ export default class Controls {
     static toggleMenu() {
         window.app.menuController.toggleMenu();
     }
+
+    static scrollUp() {
+        // check active window first TODO
+        window.app.Tracer.scrollUp();
+    }
+
+    static scrollDown() {
+        window.app.Tracer.scrollDown();
+    }
 }
 
 window.addEventListener('keydown', function (e) {
+    //console.log(e.key);
     switch (e.key) {
         case 'm':
             Controls.toggleMenu();
             break;
         case 'r':
             Controls.cycleMenu();
+            break;
+        case 'i':
+            Controls.scrollUp();
+            break;
+        case 'k':
+            Controls.scrollDown();
             break;
         default:
             break;
@@ -101,11 +117,16 @@ AFRAME.registerComponent('custom-controls', {
             this.axis = axis;
         });
 
+        controllerRight.addEventListener('axismove', evt => {
+            const axis = evt.detail.axis;
+            console.log(axis);
+        })
         // right trackpad: use click and axis location to create arrow key functionality?.. for.. something..
         // can be different depending on active menu tab
     },
 
     tick: function (time, timeDelta) {
+        //console.log(this.axis); // TODO test if axis resets to 0,0 on release, then return here ig
         const vecX = this.vecX;
         const vecZ = this.vecZ;
 
