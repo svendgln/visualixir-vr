@@ -9,12 +9,34 @@ export default class Controls {
     }
 
     static scrollUp() {
-        // check active window first TODO
-        window.app.Tracer.scrollUp();
+        // check active window first
+        const activeTab = window.app.menuController.activeTab;
+        const tab = window.app.menuController.tabIDs[activeTab];
+        switch (tab) {
+            case '#logger-info':
+                window.app.Logger.scrollUp();
+                break;
+            case '#logger-trace':
+                window.app.Tracer.scrollUp();
+                break;
+            default:
+                break;
+        }
     }
 
     static scrollDown() {
-        window.app.Tracer.scrollDown();
+        const activeTab = window.app.menuController.activeTab;
+        const tab = window.app.menuController.tabIDs[activeTab];
+        switch (tab) {
+            case '#logger-info':
+                window.app.Logger.scrollDown();
+                break;
+            case '#logger-trace':
+                window.app.Tracer.scrollDown();
+                break;
+            default:
+                break;
+        }
     }
 }
 
@@ -50,14 +72,16 @@ AFRAME.registerComponent('custom-controls', {
 
     init: function () {
         console.log('custom controls loaded');
-        const el = this.el; //probs not needed
+        const el = this.el; //TODO idk if needed
         const self = this;
         this.timer = 0;
         this.quat = new THREE.Quaternion();
         this.vecZ = new THREE.Vector3(0, 0, -1); //forward direction of camera -z
         this.vecX = new THREE.Vector3(1, 0, 0); // x axis for sideways movement
-        this.axis = [0, 0]; //controller trackpad x,z axis
-
+        this.axisL = [0, 0]; //controller trackpad x,z axis
+        this.axisR = [0, 0];
+        this.trackpadPressedR = false;
+        this.intervalID = null; // scrolling interval id
 
         // controller events
         // trigger
@@ -103,10 +127,6 @@ AFRAME.registerComponent('custom-controls', {
 
             //get active tab id, cycle to next on side grip etc
             Controls.toggleMenu();
-            //window.app.menuController.toggleMenu(); // added to class
-            // const m = document.querySelector('#menu');
-            // m.setAttribute('visible', !m.getAttribute('visible'));
-            // console.log('menu is now', !m.getAttribute('visible')? 'not visible' : 'visible');
         });
 
         // trackpad
@@ -114,15 +134,78 @@ AFRAME.registerComponent('custom-controls', {
             // position on trackpad, x,z values [-1,1]
             // TODO just yeet this.axis = evt...
             const axis = evt.detail.axis;
-            this.axis = axis;
+            this.axisL = axis;
         });
 
         controllerRight.addEventListener('axismove', evt => {
             const axis = evt.detail.axis;
-            console.log(axis);
-        })
+            this.axisR = axis;
+        });
         // right trackpad: use click and axis location to create arrow key functionality?.. for.. something..
         // can be different depending on active menu tab
+        controllerRight.addEventListener('trackpaddown', evt => {
+            // trackpad position not available in this event
+            this.trackpadPressedR = true;
+            console.log(this.axisR);
+            const posX = this.axisR[0];
+            const posY = this.axisR[1];
+            if (posX == 0 && posY == 0) return; //position not updated when clicking fast
+            let type;
+
+            if (Math.abs(posX) < 0.4 && Math.abs(posY) < 0.4) {
+                type = 'middle';
+            } else {
+                if (Math.abs(posX) > Math.abs(posY)) {
+                    //left or right
+                    (posX > 0) ? type = 'right' : type = 'left';
+                } else {
+                    // up or down
+                    (posY > 0) ? type = 'up' : type = 'down';
+                }
+            }
+            const clickEvent = new CustomEvent('trackpadclick', { detail: type });
+            controllerRight.dispatchEvent(clickEvent);
+            //test
+            this.intervalID = setTimeout(() => {
+                if (this.trackpadPressedR) {
+                    console.log('starting auto scroll');
+                    this.intervalID = setInterval(() => controllerRight.dispatchEvent(clickEvent), 50);
+                }
+            }, 1000);
+        });
+
+        // set timeout for auto scroll
+        // on let go: cancel timeout
+        // if fired: cancel interval
+
+        controllerRight.addEventListener('trackpadup', evt => {
+            this.trackpadPressedR = false;
+            console.log('stop scrolling');
+            clearInterval(this.intervalID); // also clears timeout if not reached yet
+        })
+
+        controllerRight.addEventListener('trackpadclick', evt => {
+            console.log('detail: ', evt.detail);
+            switch (evt.detail) {
+                case 'up':
+                    Controls.scrollUp();
+                    break;
+                case 'down':
+                    Controls.scrollDown();
+                    break;
+                case 'left':
+
+                    break;
+                case 'right':
+
+                    break;
+                case 'middle':
+
+                    break;
+                default:
+                    break;
+            }
+        })
     },
 
     tick: function (time, timeDelta) {
@@ -138,7 +221,7 @@ AFRAME.registerComponent('custom-controls', {
         vecX.applyQuaternion(this.quat);
 
         // scale vecs with speed scalar, add to position..
-        const axis = this.axis;
+        const axis = this.axisL;
         const axisX = axis[0] * this.data.speed;
         const axisZ = axis[1] * this.data.speed;
         // length 1

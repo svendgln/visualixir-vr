@@ -213,7 +213,7 @@ export default class {
                             color = offsetColor(color, offset);
                         }
                         //console.log(`#${color.getHexString()}`);
-                        return `shader: standard; color: #${color.getHexString()};`;
+                        return `shader: flat; color: #${color.getHexString()};`;
                     })
                     .on('click', function (d, i) {
                         //if (d3.event.defaultPrevented) return;

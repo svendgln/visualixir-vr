@@ -616,8 +616,6 @@ AFRAME.registerComponent('curve', {
   init: function init() {
     this.timer = 0;
     this.done = false;
-    console.log('CURVE');
-    console.log(this.data);
 
     var _this$data$start$spli = this.data.start.split(' ').map(function (n) {
       return parseFloat(n);
@@ -637,17 +635,14 @@ AFRAME.registerComponent('curve', {
 
     var xm = (x1 + x2) / 2,
         ym = (y1 + y2) / 2,
-        zm = (z1 + z2) / 2; //console.log(p1, p2, '->', mid);
-
-    console.log('(', x1, y1, z1, ')', ',', '(', x2, y2, z2, ')');
+        zm = (z1 + z2) / 2;
     var curve = new THREE.QuadraticBezierCurve3(new THREE.Vector3(x1, y1, z1), new THREE.Vector3(xm, ym + 3, zm), //const to make line curve upwards
     new THREE.Vector3(x2, y2, z2));
     var points = curve.getPoints(50);
     var geometry = new THREE.BufferGeometry().setFromPoints(points);
     var material = new THREE.LineBasicMaterial({
       color: 0xff0000,
-      opacity: 0.2 //HOW TO ANIMATE LOL
-
+      opacity: 0
     }); //object to add to the scene
 
     var curveObject = new THREE.Line(geometry, material); //direction cone
@@ -660,16 +655,10 @@ AFRAME.registerComponent('curve', {
     arrowObject.cone.material.opacity = 0.2;
     this.el.setObject3D('msgCone', arrowObject);
     this.el.setObject3D('msgCurve', curveObject);
-    console.log('ANIMATION'); //this.el.setAttribute('animation__fade', 'property: components.material.material.opacity; from: 1; to: 0; dur: 5000');
-    //this.el.setAttribute('animation__test', 'property: scale; from: 1 1 1; to: 2 2 2; dur: 5000');
-
-    this.el.addEventListener('animationcomplete__fade', function (evt) {
-      console.log('DONE FADING YEET');
-    });
   },
   //tock called after scene has rendered
   tock: function tock(time, timeDelta) {
-    var duration = 1000; // miliseconds
+    var duration = 1000; // milliseconds 
     //if (time < 5000) return;
 
     this.timer += timeDelta; // function was sometimes called after element was removed from DOM
@@ -679,16 +668,13 @@ AFRAME.registerComponent('curve', {
     var opacity = Math.sin(this.timer / duration * Math.PI);
 
     if (this.timer > duration) {
-      this.el.flushToDOM();
-      console.log('YEET', this.el);
-      this.el.removeAttribute('curve'); //this.el.parentNode.removeChild(this.el); //stop
-      // opacity = 0;
+      this.el.flushToDOM(); //TODO not needed anymore ig
 
+      this.el.removeAttribute('curve');
       this.done = true;
       return;
     }
 
-    console.log(timeDelta);
     var _this$el$object3DMap = this.el.object3DMap,
         msgCone = _this$el$object3DMap.msgCone,
         msgCurve = _this$el$object3DMap.msgCurve;
@@ -734,13 +720,41 @@ var Controls = /*#__PURE__*/function () {
   }, {
     key: "scrollUp",
     value: function scrollUp() {
-      // check active window first TODO
-      window.app.Tracer.scrollUp();
+      // check active window first
+      var activeTab = window.app.menuController.activeTab;
+      var tab = window.app.menuController.tabIDs[activeTab];
+
+      switch (tab) {
+        case '#logger-info':
+          window.app.Logger.scrollUp();
+          break;
+
+        case '#logger-trace':
+          window.app.Tracer.scrollUp();
+          break;
+
+        default:
+          break;
+      }
     }
   }, {
     key: "scrollDown",
     value: function scrollDown() {
-      window.app.Tracer.scrollDown();
+      var activeTab = window.app.menuController.activeTab;
+      var tab = window.app.menuController.tabIDs[activeTab];
+
+      switch (tab) {
+        case '#logger-info':
+          window.app.Logger.scrollDown();
+          break;
+
+        case '#logger-trace':
+          window.app.Tracer.scrollDown();
+          break;
+
+        default:
+          break;
+      }
     }
   }]);
 
@@ -798,7 +812,7 @@ AFRAME.registerComponent('custom-controls', {
     var _this = this;
 
     console.log('custom controls loaded');
-    var el = this.el; //probs not needed
+    var el = this.el; //TODO idk if needed
 
     var self = this;
     this.timer = 0;
@@ -807,7 +821,11 @@ AFRAME.registerComponent('custom-controls', {
 
     this.vecX = new THREE.Vector3(1, 0, 0); // x axis for sideways movement
 
-    this.axis = [0, 0]; //controller trackpad x,z axis
+    this.axisL = [0, 0]; //controller trackpad x,z axis
+
+    this.axisR = [0, 0];
+    this.trackpadPressedR = false;
+    this.intervalID = null; // scrolling interval id
     // controller events
     // trigger
     // dont use triggers for clicking, raycaster fires click event
@@ -843,23 +861,90 @@ AFRAME.registerComponent('custom-controls', {
       console.log('RIGHT MENU'); // call this.somefunction toggle menu idk
       //get active tab id, cycle to next on side grip etc
 
-      Controls.toggleMenu(); //window.app.menuController.toggleMenu(); // added to class
-      // const m = document.querySelector('#menu');
-      // m.setAttribute('visible', !m.getAttribute('visible'));
-      // console.log('menu is now', !m.getAttribute('visible')? 'not visible' : 'visible');
+      Controls.toggleMenu();
     }); // trackpad
 
     controllerLeft.addEventListener('axismove', function (evt) {
       // position on trackpad, x,z values [-1,1]
       // TODO just yeet this.axis = evt...
       var axis = evt.detail.axis;
-      _this.axis = axis;
+      _this.axisL = axis;
     });
     controllerRight.addEventListener('axismove', function (evt) {
       var axis = evt.detail.axis;
-      console.log(axis);
+      _this.axisR = axis;
     }); // right trackpad: use click and axis location to create arrow key functionality?.. for.. something..
     // can be different depending on active menu tab
+
+    controllerRight.addEventListener('trackpaddown', function (evt) {
+      // trackpad position not available in this event
+      _this.trackpadPressedR = true;
+      console.log(_this.axisR);
+      var posX = _this.axisR[0];
+      var posY = _this.axisR[1];
+      if (posX == 0 && posY == 0) return; //position not updated when clicking fast
+
+      var type;
+
+      if (Math.abs(posX) < 0.4 && Math.abs(posY) < 0.4) {
+        type = 'middle';
+      } else {
+        if (Math.abs(posX) > Math.abs(posY)) {
+          //left or right
+          posX > 0 ? type = 'right' : type = 'left';
+        } else {
+          // up or down
+          posY > 0 ? type = 'up' : type = 'down';
+        }
+      }
+
+      var clickEvent = new CustomEvent('trackpadclick', {
+        detail: type
+      });
+      controllerRight.dispatchEvent(clickEvent); //test
+
+      _this.intervalID = setTimeout(function () {
+        if (_this.trackpadPressedR) {
+          console.log('starting auto scroll');
+          _this.intervalID = setInterval(function () {
+            return controllerRight.dispatchEvent(clickEvent);
+          }, 50);
+        }
+      }, 1000);
+    }); // set timeout for auto scroll
+    // on let go: cancel timeout
+    // if fired: cancel interval
+
+    controllerRight.addEventListener('trackpadup', function (evt) {
+      _this.trackpadPressedR = false;
+      console.log('stop scrolling');
+      clearInterval(_this.intervalID); // also clears timeout if not reached yet
+    });
+    controllerRight.addEventListener('trackpadclick', function (evt) {
+      console.log('detail: ', evt.detail);
+
+      switch (evt.detail) {
+        case 'up':
+          Controls.scrollUp();
+          break;
+
+        case 'down':
+          Controls.scrollDown();
+          break;
+
+        case 'left':
+          break;
+
+        case 'right':
+          break;
+
+        case 'middle':
+          break;
+
+        default:
+          break;
+      }
+    });
   },
   tick: function tick(time, timeDelta) {
     //console.log(this.axis); // TODO test if axis resets to 0,0 on release, then return here ig
@@ -872,7 +957,7 @@ AFRAME.registerComponent('custom-controls', {
     vecZ.applyQuaternion(this.quat);
     vecX.applyQuaternion(this.quat); // scale vecs with speed scalar, add to position..
 
-    var axis = this.axis;
+    var axis = this.axisL;
     var axisX = axis[0] * this.data.speed;
     var axisZ = axis[1] * this.data.speed; // length 1
 
@@ -1018,7 +1103,9 @@ AFRAME.registerComponent('tracer-tab', {
     var el = document.querySelector('#logger-trace');
     window.app.Tracer = new Tracer(el);
   }
-}); // logger just adds string to tab idk
+}); // add some color shite..
+
+AFRAME.registerComponent('selected', {}); // logger just adds string to tab idk
 // string generated by subclass method
 
 var MsgLogger = /*#__PURE__*/function () {
@@ -1084,13 +1171,14 @@ var MsgLogger = /*#__PURE__*/function () {
     key: "addMsg",
     value: function addMsg(msg) {
       this.last += 1;
-      if (this.last == this.messages.length) this.last = 0;
+      var l = this.messages.length;
+      if (this.last == l) this.last = 0;
       this.messages[this.last] = msg; // will overide oldest msg if full
       // check if scrolling.. add explanation lol TODO
 
-      if (!this.scrolling || this.scrolling && this.last - 1 == (0, _util.mod)(this.window - this.wSize, this.messages.length)) {
+      if (!this.scrolling || this.scrolling && (0, _util.mod)(this.last - 1, l) == (0, _util.mod)(this.window - this.wSize, l)) {
         console.log('moving window');
-        this.window = (0, _util.mod)(this.window + 1, this.messages.length);
+        this.window = (0, _util.mod)(this.window + 1, l);
       } // else dont move -> scrolling
       // rerender
 
@@ -1117,10 +1205,12 @@ var MsgLogger = /*#__PURE__*/function () {
     value: function render() {
       var _this = this;
 
+      // TODO maybe add scrollbar (visual only)
       var xOffset = -this.msgWidth / 2 + this.msgPadding; // add messages in window to container
       // slice array, for each if exists add to tab..
 
-      d3.select('a-scene').select('#' + this.container.id).selectAll('a-entity').data(this.getWindow()).join('a-entity').filter(function (d, i) {
+      d3.select('a-scene').select('#' + this.container.id).selectAll('a-entity').data(this.getWindow()) //.join('a-entity')
+      .join('a-entity').filter(function (d, i) {
         return d != undefined;
       }).attr('geometry', function (d, i) {
         return "primitive: plane; width: ".concat(_this.msgWidth, "; height: ").concat(_this.msgHeight);
@@ -1135,6 +1225,15 @@ var MsgLogger = /*#__PURE__*/function () {
         // test wrapCount and width..
         return "value: ".concat(d, "; align: left; color: blue; anchor: align; xOffset: ").concat(xOffset);
       });
+    }
+  }, {
+    key: "reset",
+    value: function reset() {
+      this.messages.fill(undefined);
+      d3.select('a-scene').select('#' + this.container.id).selectAll('a-entity').remove();
+      this.last = -1;
+      this.window = -1;
+      this.scrolling = false;
     }
   }]);
 
@@ -1166,11 +1265,16 @@ var Logger = /*#__PURE__*/function (_MsgLogger) {
       var action = Logger.types.get(type);
       var node = process.node;
       console.log(name, action, node);
+
+      _get(_getPrototypeOf(Logger.prototype), "addMsg", this).call(this, "".concat(name, " ").concat(action, " ").concat(node));
     }
   }, {
     key: "logTwo",
     value: function logTwo(from, to, type) {
-      console.log(from.name, Logger.types.get(type), to.name);
+      //console.log(from.name, Logger.types.get(type), to.name);
+      var action = Logger.types.get(type);
+
+      _get(_getPrototypeOf(Logger.prototype), "addMsg", this).call(this, "".concat(from.name, " ").concat(action, " ").concat(to.name));
     }
   }]);
 
@@ -1199,7 +1303,7 @@ var Tracer = /*#__PURE__*/function (_MsgLogger2) {
     _classCallCheck(this, Tracer);
 
     _this2 = _super2.call(this, container);
-    _this2.selected = new Map(); // idk map maybe..
+    _this2.selected = new Map(); // idk map maybe.. TODO not needed
 
     _this2.nodeContainer = document.querySelector('#d3-nodes'); // parent of msg arrow elements
 
@@ -1213,9 +1317,7 @@ var Tracer = /*#__PURE__*/function (_MsgLogger2) {
           z1 = from.y;
       var x2 = to.x,
           z2 = to.y;
-      console.log('EL POS: ', from.DOMel.object3D.position);
-      console.log('from pos', x1, z1);
-      this.nodeContainer.setAttribute('curve', "start: ".concat(x1 + 0, " 0 ").concat(z1 + 0, "; end: ").concat(x2, " 0 ").concat(z2));
+      this.nodeContainer.setAttribute('curve', "start: ".concat(x1, " 0 ").concat(z1, "; end: ").concat(x2, " 0 ").concat(z2));
       console.log(from.name + '->' + to.name + ': ' + msg);
 
       _get(_getPrototypeOf(Tracer.prototype), "addMsg", this).call(this, from.name + '->' + to.name + ': ' + msg);
@@ -1726,7 +1828,7 @@ var _default = {
   supervisorOffset: 0.3,
   portOffset: -0.3,
   linkColor: 0x21a33b,
-  maxMessages: 10,
+  maxMessages: 100,
   msgHeight: 0.1 //test
 
 };
@@ -2002,7 +2104,7 @@ var _default = /*#__PURE__*/function () {
           } //console.log(`#${color.getHexString()}`);
 
 
-          return "shader: standard; color: #".concat(color.getHexString(), ";");
+          return "shader: flat; color: #".concat(color.getHexString(), ";");
         }).on('click', function (d, i) {
           //if (d3.event.defaultPrevented) return;
           //    console.log('clicked graph node CALLBACK');
@@ -2054,9 +2156,9 @@ var _default = /*#__PURE__*/function () {
         //return update
         update.attr('position', function (d, i) {
           return "".concat(d.x, " 0 ").concat(d.y);
-        }).each(function (d) {
-          d.DOMel = this; //TODO remove if not needed
-        });
+        }); // .each(function (d) {
+        //     d.element = this; 
+        // })
       }, function (exit) {
         exit.remove();
       }); //move to node update maybe
@@ -2159,6 +2261,9 @@ var _default = /*#__PURE__*/function () {
       this.isVR = true; // reset TODO test lol
 
       window.app.menuController.nodeMenu.update([]);
+      window.app.Tracer.reset();
+      window.app.Logger.reset(); // TODO doesnt work
+
       this.tabIDs.forEach(function (id) {
         var el = document.querySelector(id);
         var newParent = document.querySelector('#controllerRight');

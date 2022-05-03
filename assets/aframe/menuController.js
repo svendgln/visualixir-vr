@@ -39,6 +39,8 @@ export default class {
         this.isVR = true;
         // reset TODO test lol
         window.app.menuController.nodeMenu.update([]);
+        window.app.Tracer.reset();
+        window.app.Logger.reset();// TODO doesnt work
         this.tabIDs.forEach(id => {
             let el = document.querySelector(id);
             let newParent = document.querySelector('#controllerRight');

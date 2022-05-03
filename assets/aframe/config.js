@@ -9,7 +9,7 @@ export default {
     supervisorOffset: 0.3,
     portOffset: -0.3,
     linkColor: 0x21a33b,
-    maxMessages: 10,
+    maxMessages: 100,
     msgHeight: 0.1 //test
 }
 
