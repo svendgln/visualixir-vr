@@ -180,7 +180,7 @@ console.log("loading aframe app"); // const fs = require('fs');
 
 //window.socket.channel("nodes", {}).join().receive("ok", () => console.log('FRFRFRF'));
 // temp fix
-var components = ['clicktest.js', 'customcontrols.js', 'debug.js', 'enterleave.js', 'menubutton.js', 'menu.js', 'camrender.js', 'nodeinfo.js', 'logger.js'];
+var components = ['clicktest.js', 'customcontrols.js', 'debug.js', 'enterleave.js', 'menubutton.js', 'menu.js', 'camrender.js', 'nodeinfo.js', 'logger.js', 'curve.js'];
 components.forEach(function (c) {
   console.log('importing ', c);
 
@@ -586,7 +586,123 @@ AFRAME.registerComponent('clicktest', {
 });
 });
 
-;require.register("aframe/components/customcontrols.js", function(exports, require, module) {
+;require.register("aframe/components/curve.js", function(exports, require, module) {
+"use strict";
+
+function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _unsupportedIterableToArray(arr, i) || _nonIterableRest(); }
+
+function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+
+function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
+
+function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) { arr2[i] = arr[i]; } return arr2; }
+
+function _iterableToArrayLimit(arr, i) { var _i = arr == null ? null : typeof Symbol !== "undefined" && arr[Symbol.iterator] || arr["@@iterator"]; if (_i == null) return; var _arr = []; var _n = true; var _d = false; var _s, _e; try { for (_i = _i.call(arr); !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"] != null) _i["return"](); } finally { if (_d) throw _e; } } return _arr; }
+
+function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
+
+// le epic test
+AFRAME.registerComponent('curve', {
+  schema: {
+    start: {
+      type: 'string',
+      "default": '0 0 0'
+    },
+    end: {
+      type: 'string',
+      "default": '1 1 1'
+    }
+  },
+  init: function init() {
+    this.timer = 0;
+    this.done = false;
+    console.log('CURVE');
+    console.log(this.data);
+
+    var _this$data$start$spli = this.data.start.split(' ').map(function (n) {
+      return parseFloat(n);
+    }),
+        _this$data$start$spli2 = _slicedToArray(_this$data$start$spli, 3),
+        x1 = _this$data$start$spli2[0],
+        y1 = _this$data$start$spli2[1],
+        z1 = _this$data$start$spli2[2];
+
+    var _this$data$end$split$ = this.data.end.split(' ').map(function (n) {
+      return parseFloat(n);
+    }),
+        _this$data$end$split$2 = _slicedToArray(_this$data$end$split$, 3),
+        x2 = _this$data$end$split$2[0],
+        y2 = _this$data$end$split$2[1],
+        z2 = _this$data$end$split$2[2];
+
+    var xm = (x1 + x2) / 2,
+        ym = (y1 + y2) / 2,
+        zm = (z1 + z2) / 2; //console.log(p1, p2, '->', mid);
+
+    console.log('(', x1, y1, z1, ')', ',', '(', x2, y2, z2, ')');
+    var curve = new THREE.QuadraticBezierCurve3(new THREE.Vector3(x1, y1, z1), new THREE.Vector3(xm, ym + 3, zm), //const to make line curve upwards
+    new THREE.Vector3(x2, y2, z2));
+    var points = curve.getPoints(50);
+    var geometry = new THREE.BufferGeometry().setFromPoints(points);
+    var material = new THREE.LineBasicMaterial({
+      color: 0xff0000,
+      opacity: 0.2 //HOW TO ANIMATE LOL
+
+    }); //object to add to the scene
+
+    var curveObject = new THREE.Line(geometry, material); //direction cone
+
+    var dir = curve.getTangent(0.5).normalize(); // range [0,1] -> middle of curve
+
+    var mid = curve.getPoint(0.5);
+    console.log('tangent:', dir, 'idk', mid);
+    var arrowObject = new THREE.ArrowHelper(dir, mid, 0, 0xff0000, 0.8, 0.5);
+    arrowObject.cone.material.opacity = 0.2;
+    this.el.setObject3D('msgCone', arrowObject);
+    this.el.setObject3D('msgCurve', curveObject);
+    console.log('ANIMATION'); //this.el.setAttribute('animation__fade', 'property: components.material.material.opacity; from: 1; to: 0; dur: 5000');
+    //this.el.setAttribute('animation__test', 'property: scale; from: 1 1 1; to: 2 2 2; dur: 5000');
+
+    this.el.addEventListener('animationcomplete__fade', function (evt) {
+      console.log('DONE FADING YEET');
+    });
+  },
+  //tock called after scene has rendered
+  tock: function tock(time, timeDelta) {
+    var duration = 1000; // miliseconds
+    //if (time < 5000) return;
+
+    this.timer += timeDelta; // function was sometimes called after element was removed from DOM
+
+    if (this.done) return; //let opacity = this.timer / duration;
+
+    var opacity = Math.sin(this.timer / duration * Math.PI);
+
+    if (this.timer > duration) {
+      this.el.flushToDOM();
+      console.log('YEET', this.el);
+      this.el.removeAttribute('curve'); //this.el.parentNode.removeChild(this.el); //stop
+      // opacity = 0;
+
+      this.done = true;
+      return;
+    }
+
+    console.log(timeDelta);
+    var _this$el$object3DMap = this.el.object3DMap,
+        msgCone = _this$el$object3DMap.msgCone,
+        msgCurve = _this$el$object3DMap.msgCurve;
+    msgCurve.material.opacity = opacity;
+    msgCone.cone.material.opacity = opacity;
+  },
+  remove: function remove() {
+    this.el.removeObject3D('msgCone');
+    this.el.removeObject3D('msgCurve');
+  }
+});
+});
+
+require.register("aframe/components/customcontrols.js", function(exports, require, module) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -1085,13 +1201,21 @@ var Tracer = /*#__PURE__*/function (_MsgLogger2) {
     _this2 = _super2.call(this, container);
     _this2.selected = new Map(); // idk map maybe..
 
+    _this2.nodeContainer = document.querySelector('#d3-nodes'); // parent of msg arrow elements
+
     return _this2;
   }
 
   _createClass(Tracer, [{
     key: "logMessage",
     value: function logMessage(from, to, msg) {
-      //console.log('MSG', from, to, msg);
+      var x1 = from.x,
+          z1 = from.y;
+      var x2 = to.x,
+          z2 = to.y;
+      console.log('EL POS: ', from.DOMel.object3D.position);
+      console.log('from pos', x1, z1);
+      this.nodeContainer.setAttribute('curve', "start: ".concat(x1 + 0, " 0 ").concat(z1 + 0, "; end: ").concat(x2, " 0 ").concat(z2));
       console.log(from.name + '->' + to.name + ': ' + msg);
 
       _get(_getPrototypeOf(Tracer.prototype), "addMsg", this).call(this, from.name + '->' + to.name + ': ' + msg);
@@ -1660,10 +1784,8 @@ var _default = /*#__PURE__*/function () {
         var node = nodeList[i];
 
         if (node) {
-          var d = node.__data__; // TODO change graph pos to 0,0
-          // +5 to compensate for relative position of graph, can probably get world pos
-
-          var dist = Math.sqrt(Math.pow(d.x + 5 - camPos.x, 2) + Math.pow(d.y + 5 - camPos.z, 2)); // console.log(d.x, d.y, camPos.x, camPos.z, dist)
+          var d = node.__data__;
+          var dist = Math.sqrt(Math.pow(d.x - camPos.x, 2) + Math.pow(d.y - camPos.z, 2)); // console.log(d.x, d.y, camPos.x, camPos.z, dist)
           // let line = document.querySelector('#LINETEST');
           // line.setAttribute('line', `start: ${d.x} 0 ${d.y}; end: ${camPos.x} 0 ${camPos.z}; color: green`)
 
@@ -1824,7 +1946,7 @@ var _default = /*#__PURE__*/function () {
       var grouping_pids_list = d3.values(this.cluster_view.grouping_processes);
       var shit = d3.select('a-scene').select('#d3-test').selectAll('a-entity').data(grouping_pids_list, function (d) {
         return d.id;
-      }); //rename lol
+      }); //rename lol TODO
 
       shit.join(function (enter) {
         enter // .append('a-entity')
@@ -1932,6 +2054,8 @@ var _default = /*#__PURE__*/function () {
         //return update
         update.attr('position', function (d, i) {
           return "".concat(d.x, " 0 ").concat(d.y);
+        }).each(function (d) {
+          d.DOMel = this; //TODO remove if not needed
         });
       }, function (exit) {
         exit.remove();

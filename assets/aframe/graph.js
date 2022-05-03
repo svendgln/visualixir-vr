@@ -141,7 +141,7 @@ export default class {
         let grouping_pids_list = d3.values(this.cluster_view.grouping_processes);
         let shit = d3.select('a-scene').select('#d3-test')
             .selectAll('a-entity').data(grouping_pids_list, d => d.id);
-        //rename lol
+        //rename lol TODO
         shit.join(
             enter => {
                 enter
@@ -273,6 +273,9 @@ export default class {
 
                         return `${d.x} 0 ${d.y}`
                     })
+                    // .each(function (d) {
+                    //     d.element = this; 
+                    // })
             },
             exit => {
                 exit.remove();
@@ -329,9 +332,7 @@ export default class {
             let node = nodeList[i];
             if (node) {
                 let d = node.__data__;
-                // TODO change graph pos to 0,0
-                // +5 to compensate for relative position of graph, can probably get world pos
-                let dist = Math.sqrt(((d.x + 5) - camPos.x) ** 2 + ((d.y + 5) - camPos.z) ** 2);
+                let dist = Math.sqrt((d.x - camPos.x) ** 2 + (d.y - camPos.z) ** 2);
                 // console.log(d.x, d.y, camPos.x, camPos.z, dist)
 
                 // let line = document.querySelector('#LINETEST');

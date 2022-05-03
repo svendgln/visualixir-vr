@@ -169,10 +169,13 @@ export class Tracer extends MsgLogger {
     constructor(container) {
         super(container);
         this.selected = new Map(); // idk map maybe..
+        this.nodeContainer = document.querySelector('#d3-nodes'); // parent of msg arrow elements
     }
 
     logMessage(from, to, msg) {
-        //console.log('MSG', from, to, msg);
+        const {x: x1, y: z1} = from;
+        const {x: x2, y: z2} = to;
+        this.nodeContainer.setAttribute('curve', `start: ${x1} 0 ${z1}; end: ${x2} 0 ${z2}`);
         console.log(from.name + '->' + to.name + ': ' + msg);
         super.addMsg(from.name + '->' + to.name + ': ' + msg);
     }

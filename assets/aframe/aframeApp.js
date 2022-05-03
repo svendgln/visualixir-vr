@@ -18,7 +18,7 @@ import Controls from "./components/customcontrols.js";
 //window.socket.channel("nodes", {}).join().receive("ok", () => console.log('FRFRFRF'));
 // temp fix
 const components = ['clicktest.js', 'customcontrols.js', 'debug.js', 'enterleave.js',
- 'menubutton.js', 'menu.js', 'camrender.js', 'nodeinfo.js', 'logger.js'];
+ 'menubutton.js', 'menu.js', 'camrender.js', 'nodeinfo.js', 'logger.js', 'curve.js'];
 components.forEach(c => {
     console.log('importing ', c);
     require(`./components/${c}`);
