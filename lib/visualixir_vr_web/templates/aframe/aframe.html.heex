@@ -29,15 +29,8 @@
         </a-assets>
 
         <!-- axis visualisation.. testing.. -->
-        <a-entity position="0 -1 0">
-            <a-entity id="LINETEST" line="start: 0 0 0; end: 0 1 0; color: red"></a-entity>
-
-
-            <a-entity id="LINE" line="start: 0 0 0; end: 0 1 0; color: red"></a-entity>
-            <a-entity id="LINE" line="start: 0 0 0; end: 1 0 0; color: blue"></a-entity>
-            <a-entity id="LINE" line="start: 0 0 0; end: 0 0 -1; color: green"></a-entity>
-        </a-entity>
-        <a-entity id="POINTER" position="0 5 0" geometry="primitive: plane; width: auto; height: auto" text="wrapCount: 15;value: LOLOLOL; align: center; color: green"></a-entity>
+       
+        <%# <a-entity id="POINTER" position="0 5 0" geometry="primitive: plane; width: auto; height: auto" text="wrapCount: 15;value: LOLOLOL; align: center; color: green"></a-entity> %>
 
         <!-- default example -->
         <%# <a-box id="TEST" position="-1 0.5 -3" rotation="0 45 0" color="#4CC3D9" src="#boxTexture" enterleave
@@ -79,7 +72,7 @@
         <a-entity camera="active: false" camrender="cid: cam2canvas; width: 500; height: 500"
             position="5 20 20" rotation="-45 0 0">
         </a-entity>
-        <a-plane id="cam2" canvas-updater visible="true" position="-4 2 0" rotation="0 20 0" width="1" height="1"
+        <a-plane id="cam2" canvas-updater visible="false" position="-4 2 0" rotation="0 20 0" width="1" height="1"
             material="src:#cam2canvas; opacity: .95">
         </a-plane>
 
@@ -87,11 +80,11 @@
                 <!-- menu: add to ui in non vr, attach to controller in vr?.. -->
         <!-- someEl.sceneEl.is('vr-mode') to check.. -->
         <a-entity id="menu" menu geometry="primitive: plane; height: 1; width: 1" visible="false"
-            material="shader: flat; color: #ff5733; transparent: true; opacity: 0.5; side: double"
+            material="shader: flat; color: #111111; transparent: true; opacity: 0.5; side: double"
             position="0 1.5 0">
 
             <a-entity id="menu-nodes" geometry="primitive: plane; height: 0.9; width: 0.45"
-                material="shader: flat; color: #ff0000; side: double; transparent: true; opacity: 0.5"
+                material="shader: flat; color: #222222; side: double; transparent: true; opacity: 0.5"
                 position="-0.225 0 0.01" raycastable>
             </a-entity>
         </a-entity>
@@ -102,9 +95,9 @@
             visible="false"
             geometry="primitive: plane; height: 1; width: 1"
             position="0 1.5 0"
-            material="color: gray; opacity: 0.5; shader: flat; side: double">
+            material="color: #111111; opacity: 0.5; shader: flat; side: double">
 
-            <a-text id="node-info-title" width="1" wrapCount="20" position="0 0.4 0"   align="center"  value="Node Info: no node selected"></a-text>
+            <a-text id="node-info-title" width="1" wrapCount="20" position="0 0.4 0"   align="center"  value="Info: no process selected"></a-text>
             <a-text id="node-info-node"  width="1" wrapCount="20" position="-0.4 0.25 0"  align="left" value="Node: "></a-text>
             <a-text id="node-info-appl"  width="1" wrapCount="20" position="-0.4 0.15 0"  align="left" value="Application: "></a-text>
             <a-text id="node-info-type"  width="1" wrapCount="20" position="-0.4 0.05 0"  align="left" value="Type: "></a-text>
@@ -112,8 +105,8 @@
 
             <a-entity id="btn-collapse" geometry="primitive: cylinder; height: 0.05; radius: 0.05"
                 material="shader: flat; opacity: 0.5; color: #0beef0" rotation="90 0 0"
-                position="-0.4 -0.4 0" menu-button="name: collapseNode">
-                <a-text value="collapse node" wrapCount="20" position="0.1 0 0" rotation="-90 0 0" width="1"></a-text>
+                position="-0.4 -0.4 0" menu-button="name: kill">
+                <a-text value="kill process" wrapCount="20" position="0.1 0 0" rotation="-90 0 0" width="1"></a-text>
             </a-entity>
         </a-entity>
 
@@ -121,14 +114,14 @@
             visible="false"            
             mixin="menu-plane"
             position="0 1.5 0"
-            material="color: #fabfab">        
+            material="color: #111111">        
         </a-entity>
 
         <a-entity id="logger-trace" tracer-tab
             visible="false"
             mixin="menu-plane"
             position="0 1.5 0"
-            material="color: #0abba0">        
+            material="color: #111111">        
         </a-entity>  
 
     </a-scene>

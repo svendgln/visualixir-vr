@@ -20,7 +20,7 @@ export default class NodeInfo {
         this.applField  = document.querySelector('#node-info-appl');
         this.typeField  = document.querySelector('#node-info-type');
         this.linksField = document.querySelector('#node-info-links');
-        this.collapseBtn = document.querySelector('#btn-collapse');
+        this.killBtn = document.querySelector('#btn-collapse');
     }
 
     displayNodeInfo(info) {
@@ -38,6 +38,6 @@ export default class NodeInfo {
         // set collapse button callback
         this.activeNode = info;
         //temp
-        this.collapseBtn.setAttribute('menu-button', `args: ${id}`)
+        this.killBtn.setAttribute('menu-button', `name: kill; args: ${id}`)
     }
 }

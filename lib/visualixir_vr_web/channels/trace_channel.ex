@@ -17,6 +17,16 @@ defmodule VisualixirVrWeb.TraceChannel do
     pid_str |> pid_from_binary() |> Tracer.msg_trace()
     {:noreply, socket}
   end
+
+  @impl true
+  def handle_in("msg_kill", pid_str, socket) do
+    IO.puts("killed process")
+    pid_str |> pid_from_binary() |> Process.exit(:kill)
+    announce_exit(pid_str |> pid_from_binary())
+
+    {:noreply, socket}
+  end
+
   @impl true
   def handle_in("stop_msg_trace_all", _msg, %Socket{topic: @channel} = socket) do
     # -> cluster_view.js

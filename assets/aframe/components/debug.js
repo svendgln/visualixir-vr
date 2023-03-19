@@ -33,7 +33,7 @@ AFRAME.registerComponent('testing', {
             //rando test
             //add 1.6 to height before pointing
             //maybe fixed x/z rotation..
-            document.querySelector('#POINTER').object3D.lookAt(document.querySelector('#cameraRig').object3D.position);
+           // document.querySelector('#POINTER').object3D.lookAt(document.querySelector('#cameraRig').object3D.position);
         }
     }
 });

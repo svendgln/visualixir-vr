@@ -44,6 +44,16 @@ function collapseNode(target, args) {
         console.log('no active node or node disconnected');
     }
 }
+
+function kill(target, args) {
+    const pid = args[0];
+    const channel = window.app.clusterView.channel;
+    console.log(pid, channel);
+    if (pid) {
+        channel.push('msg_kill', pid);
+    }
+}
+
 // maybe rename to clickable or idk
 AFRAME.registerSystem('menu-button', {
 
@@ -62,6 +72,7 @@ AFRAME.registerSystem('menu-button', {
         //this.addCommand('nodeInfo', nodeInfo);
         this.addCommand('collapseNode', collapseNode);
         this.addCommand('noOp', noOp);
+        this.addCommand('kill', kill)
         this.listCommands();
     },
 

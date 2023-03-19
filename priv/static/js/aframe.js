@@ -856,6 +856,8 @@ AFRAME.registerComponent('custom-controls', {
 
     controllerLeft.addEventListener('menudown', function (evt) {
       console.log('LEFT MENU'); // toggle mode or some shit
+
+      document.querySelector('a-scene').components.screenshot.capture('perspective');
     });
     controllerRight.addEventListener('menudown', function (evt) {
       console.log('RIGHT MENU'); // call this.somefunction toggle menu idk
@@ -1018,8 +1020,7 @@ AFRAME.registerComponent('testing', {
       //rando test
       //add 1.6 to height before pointing
       //maybe fixed x/z rotation..
-
-      document.querySelector('#POINTER').object3D.lookAt(document.querySelector('#cameraRig').object3D.position);
+      // document.querySelector('#POINTER').object3D.lookAt(document.querySelector('#cameraRig').object3D.position);
     }
   }
 });
@@ -1184,9 +1185,7 @@ var MsgLogger = /*#__PURE__*/function () {
 
 
       this.render();
-    } // TODO change window shit for scrolling..
-    // 
-
+    }
   }, {
     key: "getWindow",
     value: function getWindow() {
@@ -1207,7 +1206,6 @@ var MsgLogger = /*#__PURE__*/function () {
 
       // TODO maybe add scrollbar (visual only)
       var xOffset = -this.msgWidth / 2 + this.msgPadding; // add messages in window to container
-      // slice array, for each if exists add to tab..
 
       d3.select('a-scene').select('#' + this.container.id).selectAll('a-entity').data(this.getWindow()) //.join('a-entity')
       .join('a-entity').filter(function (d, i) {
@@ -1223,7 +1221,7 @@ var MsgLogger = /*#__PURE__*/function () {
       }) // undefined test also probs
       .attr('text', function (d, i) {
         // test wrapCount and width..
-        return "value: ".concat(d, "; align: left; color: blue; anchor: align; xOffset: ").concat(xOffset);
+        return "value: ".concat(d, "; align: left; color: white; anchor: align; xOffset: ").concat(xOffset);
       });
     }
   }, {
@@ -1589,6 +1587,16 @@ function collapseNode(target, args) {
   } else {
     console.log('no active node or node disconnected');
   }
+}
+
+function kill(target, args) {
+  var pid = args[0];
+  var channel = window.app.clusterView.channel;
+  console.log(pid, channel);
+
+  if (pid) {
+    channel.push('msg_kill', pid);
+  }
 } // maybe rename to clickable or idk
 
 
@@ -1610,6 +1618,7 @@ AFRAME.registerSystem('menu-button', {
 
     this.addCommand('collapseNode', collapseNode);
     this.addCommand('noOp', noOp);
+    this.addCommand('kill', kill);
     this.listCommands();
   },
   addCommand: function addCommand(name, func) {
@@ -1780,7 +1789,7 @@ var NodeInfo = /*#__PURE__*/function () {
     this.applField = document.querySelector('#node-info-appl');
     this.typeField = document.querySelector('#node-info-type');
     this.linksField = document.querySelector('#node-info-links');
-    this.collapseBtn = document.querySelector('#btn-collapse');
+    this.killBtn = document.querySelector('#btn-collapse');
   }
 
   _createClass(NodeInfo, [{
@@ -1805,7 +1814,7 @@ var NodeInfo = /*#__PURE__*/function () {
 
       this.activeNode = info; //temp
 
-      this.collapseBtn.setAttribute('menu-button', "args: ".concat(id));
+      this.killBtn.setAttribute('menu-button', "name: kill; args: ".concat(id));
     }
   }]);
 
@@ -1893,7 +1902,7 @@ var _default = /*#__PURE__*/function () {
 
           var text = node.firstChild; //add showAllNodes boolean controlled by menu button idk..
 
-          if (dist < 3) {
+          if (dist < 20) {
             // TODO change dist in menu?? + - buttons or smth
             // console.log(node);
             text.setAttribute('visible', true); //add user height to position

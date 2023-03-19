@@ -12,4 +12,19 @@ Run:
 
 Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
 
-Elixir 1.12.3 (Erlang 22)
+Visualising nodes:
+* Elixir:
+    * elixir --sname nodename
+    * ping visualixir from new node: Node.ping(:"visualixir@nodehost")
+    
+
+* Erlang:
+    * erl -sname nodename
+    * ping visualixir from new node: net_adm:ping(visualixir@nodehost).
+
+
+
+
+Tested on:
+Elixir 1.12.3 (Erlang/OTP 22)
+Elixir 1.14.3 (Erlang/OTP 25)

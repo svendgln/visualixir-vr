@@ -13,28 +13,33 @@ defmodule VisualixirVr.Examples.MultiNodePingPong do
 
   def start do
     send_module_to_all_nodes()
+    IO.puts("bruh")
     spawn_pingers()
 
     :ok
   end
 
-  defp spawn_pingers do
-    #Logger.debug("spawn 1")
+  defp spawn_pingers() do
+    IO.puts("spawn 1")
+    IO.puts(inspect Node.list())
     Node.list() ++ [List.first(Node.list())]
     |> spawn_pingers
   end
 
-  defp spawn_pingers([]), do: :ok
-  defp spawn_pingers([last]), do: send({@name, last}, {:nobody, :ping})
+  #defp spawn_pingers([]), do: :ok
+  defp spawn_pingers([last]) do
+    IO.puts(inspect last)
+    send({@name, last}, {:nobody, :ping})
+  end
 
   defp spawn_pingers([node | [next | _rest] = rest]) do
     Node.spawn(node, fn ->
-      # IO.puts "started on #{inspect node()}"
+      IO.puts "started on #{inspect node()}"
       #Logger.debug("spawn")
       pid = spawn(__MODULE__, :loop, [next])
       :erlang.register(@name, pid)
     end)
-
+    IO.puts("register")
     spawn_pingers(rest)
   end
 
@@ -49,6 +54,7 @@ defmodule VisualixirVr.Examples.MultiNodePingPong do
             :pong -> :ping
           end
         :timer.sleep(@delay)
+        IO.puts("loop")
         send({@name, next}, {self(), outgoing})
     end
 
@@ -56,6 +62,7 @@ defmodule VisualixirVr.Examples.MultiNodePingPong do
   end
 
   defp send_module_to_all_nodes do
+    IO.puts("send")
     Enum.each(Node.list, &Util.send_module(__MODULE__, &1))
   end
 end

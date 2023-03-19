@@ -340,7 +340,7 @@ export default class {
 
                 let text = node.firstChild;
                 //add showAllNodes boolean controlled by menu button idk..
-                if (dist < 3) { // TODO change dist in menu?? + - buttons or smth
+                if (dist < 20) { // TODO change dist in menu?? + - buttons or smth
                     // console.log(node);
                     text.setAttribute('visible', true);
                     //add user height to position

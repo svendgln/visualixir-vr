@@ -99,8 +99,7 @@ export class MsgLogger {
         // rerender
         this.render();
     }
-    // TODO change window shit for scrolling..
-    // 
+    
     getWindow() {
         const start = this.window;
         let res = new Array(this.wSize);
@@ -115,7 +114,7 @@ export class MsgLogger {
     render() { // TODO maybe add scrollbar (visual only)
         const xOffset = -this.msgWidth / 2 + this.msgPadding;
         // add messages in window to container
-        // slice array, for each if exists add to tab..
+
         d3.select('a-scene').select('#' + this.container.id)
             .selectAll('a-entity')
             .data(this.getWindow())
@@ -136,7 +135,7 @@ export class MsgLogger {
                 return 'shader: flat; color: red'; //TODO temp color
             })// undefined test also probs
             .attr('text', (d, i) => { // test wrapCount and width..
-                return `value: ${d}; align: left; color: blue; anchor: align; xOffset: ${xOffset}`;
+                return `value: ${d}; align: left; color: white; anchor: align; xOffset: ${xOffset}`;
             });
     }
 

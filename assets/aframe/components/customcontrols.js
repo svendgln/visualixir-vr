@@ -119,6 +119,7 @@ AFRAME.registerComponent('custom-controls', {
         controllerLeft.addEventListener('menudown', evt => {
             console.log('LEFT MENU');
             // toggle mode or some shit
+            document.querySelector('a-scene').components.screenshot.capture('perspective');
         });
 
         controllerRight.addEventListener('menudown', evt => {

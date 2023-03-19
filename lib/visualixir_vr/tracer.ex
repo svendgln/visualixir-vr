@@ -65,9 +65,9 @@ defmodule VisualixirVr.Tracer do
   def handle_info({:trace, _spawner_pid, :spawn, pid, _mfa}, visualizer_node) do
     pid_info = map_pids_to_info([pid])
 
-    if !Enum.empty?(pid_info) do
+    # if !Enum.empty?(pid_info) do
       :rpc.call(visualizer_node, TraceChannel, :announce_spawn, [pid_info])
-    end
+    # end
 
     {:noreply, visualizer_node}
   end
